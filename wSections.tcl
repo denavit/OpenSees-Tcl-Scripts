@@ -30,21 +30,18 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
   # Fillet
   #    - "-Fillet $k" 
 
-  # ########### Define Section by calling itself with secID = noSection ###########
-  if { [string compare -nocase $secID "noSection"] != 0 } {
-    section fiberSec $secID {
-      eval wfSection noSection $nf1 $nf2 $d $tw $bf $tf $args
-    }
-    return
-  }
 
+  # ########### Set Constants and Default Values ###########
   set currentMatTag          null
   set materialType           null
   set materialParams         null
   set residualStressType     null
   set residualStressParams   null
   set AddedElastic           no
-  
+  set GJ                     calc
+  set Es                     0.0
+
+  # ########### Check Required Input ###########  
   set d    [expr double($d)]
   set tw   [expr double($tw)]
   set bf   [expr double($bf)]
@@ -72,6 +69,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
     error "Error - wfSection: section dimensions should be input as posititve values"
   }
 
+  # ########### Read Optional Input ###########
   for { set i 0 } { $i < [llength $args] } { incr i } {
     set param [lindex $args $i]
     if { $param == "-matTag" } {
@@ -91,13 +89,23 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
       set materialType   ElasticPP
       set currentMatTag  [lindex $args [expr $i+1]]
       set materialParams [lrange $args [expr $i+2] [expr $i+3]] 
+      set Es             [lindex $args [expr $i+2]]
+      incr i 3
+      continue
+    }
+    if { $param == "-ElasticSmallStiffness" } {
+      set materialType   ElasticSmallStiffness
+      set currentMatTag  [lindex $args [expr $i+1]]
+      set materialParams [lrange $args [expr $i+2] [expr $i+3]] 
+      set Es             [lindex $args [expr $i+2]]   
       incr i 3
       continue
     }
     if { $param == "-Steel02" } {
       set materialType Steel02
       set currentMatTag  [lindex $args [expr $i+1]]
-      set materialParams [lrange $args [expr $i+2] [expr $i+4]] 
+      set materialParams [lrange $args [expr $i+2] [expr $i+4]]
+      set Es             [lindex $args [expr $i+2]]
       incr i 4
       continue
     }
@@ -105,6 +113,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
       set materialType shenSteel
       set currentMatTag  [lindex $args [expr $i+1]]
       set materialParams [lrange $args [expr $i+2] [expr $i+6]] 
+      set Es             [lindex $args [expr $i+2]]
       incr i 6
       continue
     }
@@ -112,6 +121,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
       set materialType shenSteelDegrade
       set currentMatTag  [lindex $args [expr $i+1]]
       set materialParams [lrange $args [expr $i+2] [expr $i+6]] 
+      set Es             [lindex $args [expr $i+2]]
       incr i 6
       continue
     }
@@ -150,15 +160,44 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
       # other checks on k to make sure it isn't too large
       continue
     }
+    if { $param == "-GJ" } {
+      incr i      
+      set GJ [lindex $args $i]
+      continue
+    }
     error "Error - wfSection: unknown optional parameter: $param"
   }
 
-  # Set additional section dimensions
+  # ########### Set Additional Section Dimensions ###########
   set dw [expr $d - 2 * $tf]
   set d1 [expr $dw/2]
   set d2 [expr $d/2]
   set b1 [expr $tw/2]
   set b2 [expr $bf/2]
+
+  # ########### Compute GJ if necessary ###########
+  if { $GJ == "calc" } {
+    if {$Es == 0.0} {
+      if { $bendingType == "2dStrong" || $bendingType == "2dWeak" } {
+        # GJ unnecessary
+        set GJ 0.0
+      } elseif { $bendingType == "3d" } {
+        error "Error - wfSection: no E defined to calculate GJ" 
+      }
+    } else {
+      set G  [expr $Es/(2*(1+0.3))]
+      set J  [expr (2*$bf*pow($tf,3) + pow($tw,2)*($d-2*$tf))/3.0]
+      set GJ [expr $G*$J]
+    }
+  }
+
+  # ########### Define Section by calling itself with secID = noSection ###########
+  if { [string compare -nocase $secID "noSection"] != 0 } {
+    section fiberSec $secID -GJ $GJ {
+      eval wfSection noSection $nf1 $nf2 $d $tw $bf $tf $args
+    }
+    return
+  }
 
 
   if { $materialType == "Elastic" } {
@@ -205,6 +244,10 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
         if { $residualStressType == "Lehigh" } {
             set frc          [lindex $residualStressParams 0]
             set numSectors   [lindex $residualStressParams 1]
+
+            if { $frc > 0 } {
+              error "Error - wfSection: the compressive residual stress (frc) should be negative"
+            }
 
             set frt [expr -1*$frc*($bf*$tf)/($bf*$tf+$tw*$dw)]
 
@@ -342,6 +385,11 @@ proc OpenSeesComposite::defineUniaxialMaterialWithResidualStress {matID fr mater
       set epsyN [expr -$Fy/$Es]
       set epsy0 [expr -$fr/$Es]
       uniaxialMaterial ElasticPP $matID $Es $epsyP $epsyN $epsy0
+    }
+    ElasticSmallStiffness {
+      set Es [expr double([lindex $args 0])]
+      set Fy [expr double([lindex $args 1])]
+      uniaxialMaterial multiSurfaceKinematicHardening $matID -initialStress $fr -Direct $Es 0.0 $Fy [expr $Es/1000.0]
     }
     Steel02 {
       set Es [expr double([lindex $args 0])]

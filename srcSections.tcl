@@ -390,11 +390,15 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
                 -ElasticPP [expr $startMatID+3] $Es $Fy \
                 -Lehigh $residualStress $numResidualStressDiv
         }
+        ElasticSmallStiffness {
+            wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
+                -ElasticSmallStiffness [expr $startMatID+3] $Es $Fy \
+                -Lehigh $residualStress $numResidualStressDiv
+        }
         default {
             error "ERROR: srcSection: unknown steel material type: $steelMaterialType"
         }
     }
-
 
     if { $hasReinf } {
         # ########### Set Longitudinal Reinforcing Steel Materials ###########
@@ -418,6 +422,9 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
             }
             ElasticPP {
                 uniaxialMaterial ElasticPP $reinfSteelID $longReinfEs [expr double($longReinfFy)/double($longReinfEs)]
+            }
+            ElasticSmallStiffness {
+                uniaxialMaterial multiSurfaceKinematicHardening $reinfSteelID -Direct $longReinfEs 0.0 $longReinfFy [expr double($longReinfEs)/1000.0]
             }
             default {
                 error "ERROR: srcSection: unknown reinforcing material type: $reinfMaterialType"
@@ -453,7 +460,6 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
                 $AddedElasticGJ
         }
     }
-
 }
 
 
