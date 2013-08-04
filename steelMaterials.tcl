@@ -19,10 +19,12 @@ proc OpenSeesComposite::shenSteelMaterial { matTag Es Fy Fu eu units args} {
    	#   -initialStress $initialStress - inital stress of the material used
     #      to model residual stresses (must be in the elastic range)
    	#   -initialPlasticStrain $epo - inital plastic strain
+    #   -initialPlasticModulus $Epst
 
     # ########### Set Constants and Default Values ###########
     set extraArgs       [list]
     set type            null
+    set Epst_input      -1
     set initialStress   0.0
     set epo             0.0
     set alphaLat        0.0
@@ -30,7 +32,6 @@ proc OpenSeesComposite::shenSteelMaterial { matTag Es Fy Fu eu units args} {
     set lbDegEp_rate    0.0
     set lbDegKappa_rate 0.0
     set lbDegFulb_rate  0.0
-
 
     # ############### Check Input Data ###############
 	set Es [expr double($Es)]
@@ -69,6 +70,15 @@ proc OpenSeesComposite::shenSteelMaterial { matTag Es Fy Fu eu units args} {
             set epo [expr double($epo)]
             if { $epo <= 0.0 } {
                 error "Error - shenSteelMaterial: epo should be input as a posititve value"
+            }
+            continue
+		}
+        if { $param == "-initialPlasticModulus" } {
+            set Epst_input [lindex $args [expr $i+1]]
+            incr i 1
+            set Epst_input [expr double($Epst_input)]
+            if { $Epst <= 0.0 } {
+                error "Error - shenSteelMaterial: Epst should be input as a posititve value"
             }
             continue
 		}
@@ -113,6 +123,9 @@ proc OpenSeesComposite::shenSteelMaterial { matTag Es Fy Fu eu units args} {
 
     # Shen Steel Model Parameters
 	shenSteelProperties $Fy $Es $units kappaBar0 Ep0i alpha a b c omega zeta e f epst Epst M
+    if { $Epst_input != -1 } {
+      set Epst $Epst_input
+    }
 
     # ############### Material Type ###############
     switch -exact -- $type {
@@ -163,8 +176,10 @@ proc OpenSeesComposite::shenSteelMaterial { matTag Es Fy Fu eu units args} {
     }
 
 	# Define Material
-     eval uniaxialMaterial shenSteel01 $matTag $Es $Fy $Fu $eu $kappaBar0 $Ep0i \
-        $alpha $a $b $c $omega $zeta $e $f $extraArgs
+    eval uniaxialMaterial shenSteel01 $matTag $Es $Fy $Fu $eu $kappaBar0 $Ep0i \
+        $alpha $a $b $c $omega $zeta $e $f $extraArgs	
+    # uniaxialMaterial shenSteel01 $matTag $Es $Fy $Fu $eu $kappaBar0 $Ep0i \
+    #     $alpha $a $b $c $omega $zeta $e $f {*}$extraArgs
 }
 
 
