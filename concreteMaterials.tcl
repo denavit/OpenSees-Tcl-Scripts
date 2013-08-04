@@ -247,4 +247,6 @@ proc OpenSeesComposite::changManderConcreteMaterial { matTag fc units args} {
 	# ############### Define Material ###############
     eval uniaxialMaterial changManderConcrete01 $matTag -$fcc -$ecc $Ec \
         $rn_pre $rn_post $ft $et $rp $xp_cr $extraArgs
+    # uniaxialMaterial Concrete04 $matTag -$fcc -$ecc -1.0 $Ec
+    # uniaxialMaterial Concrete01 $matTag -$fcc -$ecc [expr -0.85*$fcc] [expr -5*$ecc]
 }
