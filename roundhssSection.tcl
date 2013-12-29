@@ -1,6 +1,6 @@
-proc OpenSeesComposite::roundHssSection { secID startMatID nf1 nf2 units D t Fy Fu Es args} {
+proc OpenSeesComposite::roundhssSection { secID startMatID nf1 nf2 units D t Fy Fu Es args} {
   # ###################################################################
-  # roundHssSection $secID $startMatID $nf1 $nf2 $units $D $t $Fy $Fu $Es
+  # roundhssSection $secID $startMatID $nf1 $nf2 $units $D $t $Fy $Fu $Es
   # ###################################################################
   # tcl procedure for creating a round HSS steel fiber section
   #
@@ -40,7 +40,7 @@ proc OpenSeesComposite::roundHssSection { secID startMatID nf1 nf2 units D t Fy 
 
   set nf1 [expr int($nf1)]
   if { $nf1 <= 0 } {
-    error "Error - roundHssSection: the number of fibers (nf1) should be positive"
+    error "Error - roundhssSection: the number of fibers (nf1) should be positive"
   }
 
   if { [string compare -nocase $nf2 "strong"] == 0 } {
@@ -51,27 +51,27 @@ proc OpenSeesComposite::roundHssSection { secID startMatID nf1 nf2 units D t Fy 
     set bendingType 3d
     set nf2 [expr int($nf2)]
     if { $nf2 <= 0 } {
-      error "Error - roundHssSection: the number of fibers (nf2) should be positive"
+      error "Error - roundhssSection: the number of fibers (nf2) should be positive"
     }
   }
 
   if { $D <= 0.0 } {
-    error "Error - roundHssSection: D should be input as a posititve value"
+    error "Error - roundhssSection: D should be input as a posititve value"
   }
   if { $t <= 0.0 } {
-    error "Error - roundHssSection: t should be input as a posititve value"
+    error "Error - roundhssSection: t should be input as a posititve value"
   }
   if { $t >= [expr 0.5*$D] } {
-    error "Error - roundHssSection: t is too large compared to D"
+    error "Error - roundhssSection: t is too large compared to D"
   }
   if { $Fy <= 0.0 } {
-    error "Error - roundHssSection: Steel yield strength should be input as a posititve values"
+    error "Error - roundhssSection: Steel yield strength should be input as a posititve values"
   }
   if { $Fu <= $Fy && $Fu != "calc" } {
-    error "Error - roundHssSection: Steel ultimate strength should be greater than yield strength or calc"
+    error "Error - roundhssSection: Steel ultimate strength should be greater than yield strength or calc"
   }
   if { $Es <= 0.0 && $Es != "calc" } {
-    error "Error - roundHssSection: Steel elastic modulus should be input as a posititve values or calc"
+    error "Error - roundhssSection: Steel elastic modulus should be input as a posititve values or calc"
   }
 
 
@@ -107,7 +107,7 @@ proc OpenSeesComposite::roundHssSection { secID startMatID nf1 nf2 units D t Fy 
       }
       continue
     }
-    error "Error - roundHssSection: unknown optional parameter: $param" 
+    error "Error - roundhssSection: unknown optional parameter: $param" 
   }
 
 
@@ -123,7 +123,7 @@ proc OpenSeesComposite::roundHssSection { secID startMatID nf1 nf2 units D t Fy 
 
   # ########### Set Additional Section Dimensions ###########
   set ro [expr 0.5*$D]
-  set ri [expr $ri-$t]
+  set ri [expr $ro-$t]
 
 
   # ########### Compute Material Properties ###########
@@ -142,7 +142,7 @@ proc OpenSeesComposite::roundHssSection { secID startMatID nf1 nf2 units D t Fy 
   # ########### Define Section by calling itself with secID = noSection ###########
   if { [string compare -nocase $secID "noSection"] != 0 } {
     section Fiber $secID -GJ $GJ {
-      eval roundHssSection noSection $startMatID $nf1 $nf2 $units $D $t $Fy $Fu $Es $args
+      eval roundhssSection noSection $startMatID $nf1 $nf2 $units $D $t $Fy $Fu $Es $args
     }
     return
   }
@@ -171,7 +171,7 @@ proc OpenSeesComposite::roundHssSection { secID startMatID nf1 nf2 units D t Fy 
       uniaxialMaterial Steel02 $stlID $Fy $Es $b $R0 $cR1 $cR2
     }
     default {
-      error "ERROR: roundHssSection: unknown steel material type: $steelMaterialType"
+      error "ERROR: roundhssSection: unknown steel material type: $steelMaterialType"
     }
   }
 
@@ -195,7 +195,7 @@ proc OpenSeesComposite::roundHssSection { secID startMatID nf1 nf2 units D t Fy 
     patch circ $stlID $nfc $nfr 0.0 0.0 $ri $ro 0.0 360.0    
 
   } else {
-    error "Error - roundHssSection: unknown bendingAxis"
+    error "Error - roundhssSection: unknown bendingAxis"
   }
 
   # ########### Add elastic stiffness if necessary ###########
