@@ -38,6 +38,7 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
     set reinfMaterialType ProposedForBehavior
     set AddedElastic no
     set GJ steelonly
+    set WideFlangeResidualStressParameter 1.0
 
     # ########### Check Required Input ###########
     set B   [expr double($B)]
@@ -98,6 +99,11 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
         }
         if { $param == "-SteelMaterialType" } {
             set steelMaterialType [lindex $args [expr $i+1]]
+            incr i 1
+            continue
+        }
+        if { $param == "-WideFlangeResidualStressParameter" } {
+            set WideFlangeResidualStressParameter [lindex $args [expr $i+1]]
             incr i 1
             continue
         }
@@ -230,6 +236,26 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
             }
             changManderConcreteMaterial $highConfinedConcID $fc $units \
                 -triaxial $flhighz $flhighy -r Popovics
+        }
+        Elastic {
+            switch -exact -- $units {
+                US { set Ec [expr 1802.5*sqrt($fc)] }
+                SI { set Ec [expr 4733.0*sqrt($fc)] }
+                default { error "ERROR: units not recgonized" }
+            }
+            uniaxialMaterial Elastic $coverConcID $Ec
+            set medConfinedConcID $coverConcID
+            set highConfinedConcID $coverConcID
+        }
+        ElasticNoTension {
+            switch -exact -- $units {
+                US { set Ec [expr 1802.5*sqrt($fc)] }
+                SI { set Ec [expr 4733.0*sqrt($fc)] }
+                default { error "ERROR: units not recgonized" }
+            }
+            uniaxialMaterial ENT $coverConcID $Ec
+            set medConfinedConcID $coverConcID
+            set highConfinedConcID $coverConcID
         }
         default {
             error "ERROR: srcSection: unknown concrete material type: $concMaterialType"
@@ -378,7 +404,7 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
     } else {
         error "Error - srcSection: unknown bendingAxis"
     }
-    set residualStress [expr -0.3*$Fy]
+    set residualStress [expr -0.3*$Fy*$WideFlangeResidualStressParameter]
     switch -exact -- $steelMaterialType {
         Shen {
             wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
@@ -394,6 +420,10 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
             wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
                 -ElasticSmallStiffness [expr $startMatID+3] $Es $Fy \
                 -Lehigh $residualStress $numResidualStressDiv
+        }
+        Elastic {
+            wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
+                -Elastic [expr $startMatID+3] $Es
         }
         default {
             error "ERROR: srcSection: unknown steel material type: $steelMaterialType"
@@ -425,6 +455,9 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
             }
             ElasticSmallStiffness {
                 uniaxialMaterial multiSurfaceKinematicHardening $reinfSteelID -Direct $longReinfEs 0.0 $longReinfFy [expr double($longReinfEs)/1000.0]
+            }
+            Elastic {
+                uniaxialMaterial Elastic $reinfSteelID $longReinfEs
             }
             default {
                 error "ERROR: srcSection: unknown reinforcing material type: $reinfMaterialType"
@@ -481,8 +514,11 @@ proc OpenSeesComposite::parseReinf { reinf bendingType B H d bf units } {
 
     set pi  [expr 2*asin(1.0)]
     set reinfConfig [lindex $reinf 0]
+    
+    if { $reinfConfig == "none" } {
+        set hasReinf false
 
-    if { [regexp -nocase "^(\[0-9]+)\[xz]\-(\[0-9]+)\y\-?(\[a-z0-9]*)$" $reinfConfig scratch nBarZ nBarY option] } {
+    } elseif { [regexp -nocase "^(\[0-9]+)\[xz]\-(\[0-9]+)\y\-?(\[a-z0-9]*)$" $reinfConfig scratch nBarZ nBarY option] } {
 
         set db       [expr double([lindex $reinf 1])]
         set Fylr     [expr double([lindex $reinf 2])]
@@ -695,11 +731,16 @@ proc OpenSeesComposite::parseReinf { reinf bendingType B H d bf units } {
         set Ae      [expr $Ae*(1-$sprime/(2*$Bc))*(1-$sprime/(2*$Hc))]
 
         # Compute Confining Pressure
-        set ke [expr $Ae/($Ac-$Asrt)]
-        set rhosrtz [expr 2*$Abt/$s/$Hc]
-        set rhosrty [expr 2*$Abt/$s/$Bc]
-        set flmedz [expr $ke*$rhosrtz*$Fytr]
-        set flmedy [expr $ke*$rhosrty*$Fytr]
+        if { $dbTies == 0 } {
+            set flmedz 0.0
+            set flmedy 0.0
+        } else {
+            set ke [expr $Ae/($Ac-$Asrt)]
+            set rhosrtz [expr 2*$Abt/$s/$Hc]
+            set rhosrty [expr 2*$Abt/$s/$Bc]
+            set flmedz [expr $ke*$rhosrtz*$Fytr]
+            set flmedy [expr $ke*$rhosrty*$Fytr]
+        }
 
     } else {
         error "ERROR - parseReinf - unknown reinforcing configuration"
@@ -707,30 +748,32 @@ proc OpenSeesComposite::parseReinf { reinf bendingType B H d bf units } {
 
 
     # Set variables in upper frame
-    upvar longReinfEs x
-    set x $longReinfEs
-    upvar longReinfFy x
-    set x $longReinfFy
-    upvar longReinfFu x
-    set x $longReinfFu
     upvar hasReinf x
     set x $hasReinf
-    upvar coverH x
-    set x $coverH
-    upvar coverB x
-    set x $coverB
-    upvar flmedz x
-    set x $flmedz
-    upvar flmedy x
-    set x $flmedy
-    upvar longReinf_y x
-    set x $longReinf_y
-    upvar longReinf_z x
-    set x $longReinf_z
-    upvar longReinf_A x
-    set x $longReinf_A
-    upvar longReinfDb x
-    set x $db
-    upvar longReinfS x
-    set x $s
+    if { $hasReinf } {
+        upvar longReinfEs x
+        set x $longReinfEs
+        upvar longReinfFy x
+        set x $longReinfFy
+        upvar longReinfFu x
+        set x $longReinfFu
+        upvar coverH x
+        set x $coverH
+        upvar coverB x
+        set x $coverB
+        upvar flmedz x
+        set x $flmedz
+        upvar flmedy x
+        set x $flmedy
+        upvar longReinf_y x
+        set x $longReinf_y
+        upvar longReinf_z x
+        set x $longReinf_z
+        upvar longReinf_A x
+        set x $longReinf_A
+        upvar longReinfDb x
+        set x $db
+        upvar longReinfS x
+        set x $s
+    }
 }
