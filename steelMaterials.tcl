@@ -364,8 +364,9 @@ proc OpenSeesComposite::hssSteelAbdelRahman {matTag Fy Es args} {
   #    Models for Analysis of Cold-Formed Steel Members.” Journal of Structural
   #    Engineering, 123(9), 1135-1143.
 
-  set Fy  [expr double($Fy)]
-  set Es  [expr double($Es)]
+  set Fy [expr double($Fy)]
+  set Es [expr double($Es)]
+  set rs 0.75
 
   # ########### Read Optional Input ###########
   for { set i 0 } { $i < [llength $args] } { incr i } {
@@ -379,11 +380,21 @@ proc OpenSeesComposite::hssSteelAbdelRahman {matTag Fy Es args} {
       set m   [expr 0.192*($Fu/$Fy) - 0.068]
       set DFy [expr 0.60*($Bc/pow($r/$t,$m)-1)*$Fy]
       set Fy  [expr $Fy+$DFy]
+      continue
     }
+    if { $param == "-ResidualStressParameter" } {
+      set rs [expr double([lindex $args [expr $i+1]])]
+      incr i 1
+      if { $rs > 1.0 || $rs < 0.0} {
+        error "ERROR: hssSteelAbdelRahman: residual stress parameter should be between 0 and 1 ($rs)"
+      }
+      continue
+    }
+    error "Error - hssSteelAbdelRahman: unknown optional parameter: $param"
   }
 
-  set s1  [expr 0.75*$Fy]
-  set s2  [expr 0.875*$Fy]
+  set s1  [expr $rs*$Fy]
+  set s2  [expr (1.0-0.5*(1.0-$rs))*$Fy]
   set s3  [expr $Fy]
 
   set E1  [expr $Es]

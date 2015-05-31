@@ -33,6 +33,7 @@ proc OpenSeesComposite::rcftSection { secID startMatID nf1 nf2 units D B t Fy Fu
     set steelMaterialType ProposedForBehavior
     set AddedElastic no
     set GJ steelonly
+    set AbdelRahmanResidualStressParameter 0.75
 
     # ########### Check Required Input ###########
     set D   [expr double($D)]
@@ -97,6 +98,10 @@ proc OpenSeesComposite::rcftSection { secID startMatID nf1 nf2 units D B t Fy Fu
         if { $param == "-SteelMaterialType" } {
             set steelMaterialType [lindex $args [expr $i+1]]
             incr i 1
+            if { $steelMaterialType == "ModifiedAbdelRahman" } {
+                set AbdelRahmanResidualStressParameter [lindex $args [expr $i+1]]
+                incr i 1
+            }
             continue
         }
         if { $param == "-GJ" } {
@@ -202,6 +207,11 @@ proc OpenSeesComposite::rcftSection { secID startMatID nf1 nf2 units D B t Fy Fu
         AbdelRahman {
             hssSteelAbdelRahman $stlFlatID   $Fy $Es
             hssSteelAbdelRahman $stlCornerID $Fy $Es -corner $Fu $t $t
+            # r (internal radius) = t (wall thickness)
+        }
+        ModifiedAbdelRahman {
+            hssSteelAbdelRahman $stlFlatID   $Fy $Es -ResidualStressParameter $AbdelRahmanResidualStressParameter
+            hssSteelAbdelRahman $stlCornerID $Fy $Es -corner $Fu $t $t -ResidualStressParameter $AbdelRahmanResidualStressParameter
             # r (internal radius) = t (wall thickness)
         }
         Elastic {

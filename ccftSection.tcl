@@ -32,6 +32,7 @@ proc OpenSeesComposite::ccftSection { secID startMatID nf1 nf2 units D t Fy Fu E
     set steelMaterialType ProposedForBehavior
     set AddedElastic no
     set GJ steelonly
+    set AbdelRahmanResidualStressParameter 0.75
 
     # ########### Check Required Input ###########
     set D   [expr double($D)]
@@ -92,6 +93,10 @@ proc OpenSeesComposite::ccftSection { secID startMatID nf1 nf2 units D t Fy Fu E
         if { $param == "-SteelMaterialType" } {
             set steelMaterialType [lindex $args [expr $i+1]]
             incr i 1
+            if { $steelMaterialType == "ModifiedAbdelRahman" } {
+                set AbdelRahmanResidualStressParameter [lindex $args [expr $i+1]]
+                incr i 1
+            }
             continue
         }
         if { $param == "-GJ" } {
@@ -182,6 +187,12 @@ proc OpenSeesComposite::ccftSection { secID startMatID nf1 nf2 units D t Fy Fu E
         AbdelRahman {
             hssSteelAbdelRahman $stlID $Fy $Es
         }
+        ModifiedAbdelRahman {
+            hssSteelAbdelRahman $stlID $Fy $Es -ResidualStressParameter $AbdelRahmanResidualStressParameter
+        }
+        Elastic {
+            uniaxialMaterial Elastic $stlID $Es
+        }
         ElasticPP {
             uniaxialMaterial ElasticPP $stlID $Es [expr $Fy/$Es]
         }
@@ -214,6 +225,22 @@ proc OpenSeesComposite::ccftSection { secID startMatID nf1 nf2 units D t Fy Fu E
         ProposedForDesign_EI {
             changManderConcreteMaterial $concID $fc $units \
                 -symmetric $fl -r Popovics
+        }
+        Elastic {
+            switch -exact -- $units {
+                US { set Ec [expr 1802.5*sqrt($fc)] }
+                SI { set Ec [expr 4733.0*sqrt($fc)] }
+                default { error "ERROR: units not recgonized" }
+            }
+            uniaxialMaterial Elastic $concID $Ec
+        }
+        ElasticNoTension {
+            switch -exact -- $units {
+                US { set Ec [expr 1802.5*sqrt($fc)] }
+                SI { set Ec [expr 4733.0*sqrt($fc)] }
+                default { error "ERROR: units not recgonized" }
+            }
+            uniaxialMaterial ENT $concID $Ec
         }
         Sakino {
             ccftConcreteSakino $concID $fc $D $t $Fy $units
