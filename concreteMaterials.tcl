@@ -210,6 +210,10 @@ proc OpenSeesComposite::changManderConcreteMaterial { matTag fc units args} {
                 SI { set rn_pre  [expr $fc/5.2 - 1.9] }
                 default { error "ERROR: units not recgonized" }
             }
+            if { $rn_pre <= 0 } {
+                set n [expr $Ec*$ecc/$fcc]
+                set rn_pre [expr $n/($n-1)]
+            }
         }
         default {
             if { [string is double -strict $rn_pre_type ] } {
