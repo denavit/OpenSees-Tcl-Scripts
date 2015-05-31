@@ -227,9 +227,9 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
             patchRect2d $matTag [expr ceil(($nf1/$d)*$tf)]         $bf -$d2 -$d1
         # ########### Define Fibers: 2d Weak ###########
         } elseif { $bendingType == "2dWeak" } {
-            patchRect2d $matTag [expr ceil(($nf1/$bf)*($bf-$tw)/2]   [expr 2*$tf]  $b1  $b2
+            patchRect2d $matTag [expr ceil(($nf1/$bf)*($bf-$tw)/2)]   [expr 2*$tf]  $b1  $b2
             patchRect2d $matTag [expr ceil(($nf1/$bf)*$tw)]          $d           -$b1  $b1
-            patchRect2d $matTag [expr ceil(($nf1/$bf)*($bf-$tw)/2]   [expr 2*$tf] -$b2 -$b1
+            patchRect2d $matTag [expr ceil(($nf1/$bf)*($bf-$tw)/2)]   [expr 2*$tf] -$b2 -$b1
         # ########### Define Fibers: 3d ###########
         } elseif { $bendingType == "3d" } {
             patch quad $matTag [expr int(ceil(($nf1/$d)*$tf))]       [expr int(ceil(($nf2/$bf)*$bf))]  $d1 -$b2  $d2 -$b2  $d2  $b2  $d1  $b2
