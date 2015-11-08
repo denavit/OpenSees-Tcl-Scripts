@@ -186,6 +186,17 @@ proc OpenSeesComposite::changManderConcreteMaterial { matTag fc units args} {
             set rp         4.0
             set xp_cr      4.0
         }
+        Popovics {
+            switch -exact -- $units {
+                US { set ft [expr (0.5*sqrt($fc*6.89476))/6.89476] }
+                SI { set ft [expr 0.5*sqrt($fc)] }
+                default { error "ERROR: units not recgonized" }
+            }
+            set et         [expr 1.23*$ft/$Ec]
+            set n          [expr $Ec*$et/$ft]
+            set rp         [expr $n/($n-1)]
+            set xp_cr      2.0
+        }
         none {
             set ft         0.0
             set et         0.0

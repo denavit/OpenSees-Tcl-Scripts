@@ -245,7 +245,7 @@ proc OpenSeesComposite::rcftSection { secID startMatID nf1 nf2 units D B t Fy Fu
         }
         ProposedForDesign_EI {
             changManderConcreteMaterial $concID $fc $units \
-                -r Popovics
+                -r Popovics -tension Popovics
         }
         Elastic {
             switch -exact -- $units {

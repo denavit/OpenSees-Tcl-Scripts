@@ -227,15 +227,15 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
         }
         ProposedForDesign_EI {
             changManderConcreteMaterial $coverConcID $fc $units \
-                -cover -r Popovics
+                -cover -r Popovics -tension Popovics
             if { $hasReinf } {
                 changManderConcreteMaterial $medConfinedConcID $fc $units \
-                    -triaxial $flmedz $flmedy -r Popovics
+                    -triaxial $flmedz $flmedy -r Popovics -tension Popovics
             } else {
                 set medConfinedConcID $coverConcID
             }
             changManderConcreteMaterial $highConfinedConcID $fc $units \
-                -triaxial $flhighz $flhighy -r Popovics
+                -triaxial $flhighz $flhighy -r Popovics -tension Popovics
         }
         Elastic {
             switch -exact -- $units {
