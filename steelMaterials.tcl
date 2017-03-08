@@ -367,6 +367,7 @@ proc OpenSeesComposite::hssSteelAbdelRahman {matTag Fy Es args} {
   set Fy [expr double($Fy)]
   set Es [expr double($Es)]
   set rs 0.75
+  set E4_over_Es 0.005
 
   # ########### Read Optional Input ###########
   for { set i 0 } { $i < [llength $args] } { incr i } {
@@ -390,6 +391,14 @@ proc OpenSeesComposite::hssSteelAbdelRahman {matTag Fy Es args} {
       }
       continue
     }
+    if { $param == "-HardeningRatio" } {
+      set E4_over_Es [expr double([lindex $args [expr $i+1]])]
+      incr i 1
+      if { $E4_over_Es > 1.0 || $E4_over_Es < 0.0} {
+        error "ERROR: hssSteelAbdelRahman: hardening ratio should be between 0 and 1 ($rs)"
+      }
+      continue
+    }    
     error "Error - hssSteelAbdelRahman: unknown optional parameter: $param"
   }
 
@@ -400,7 +409,7 @@ proc OpenSeesComposite::hssSteelAbdelRahman {matTag Fy Es args} {
   set E1  [expr $Es]
   set E2  [expr 0.5*$Es]
   set E3  [expr 0.1*$Es]
-  set E4  [expr 0.005*$Es]
+  set E4  [expr $E4_over_Es*$Es]
 
   set e1  [expr $s1/$E1]
   set e2  [expr $e1+($s2-$s1)/$E2]

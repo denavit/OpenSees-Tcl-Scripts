@@ -33,7 +33,8 @@ proc OpenSeesComposite::ccftSection { secID startMatID nf1 nf2 units D t Fy Fu E
     set AddedElastic no
     set GJ steelonly
     set AbdelRahmanResidualStressParameter 0.75
-
+    set AbdelRahmanHardeningRatio 0.005
+    
     # ########### Check Required Input ###########
     set D   [expr double($D)]
     set t   [expr double($t)]
@@ -95,7 +96,8 @@ proc OpenSeesComposite::ccftSection { secID startMatID nf1 nf2 units D t Fy Fu E
             incr i 1
             if { $steelMaterialType == "ModifiedAbdelRahman" } {
                 set AbdelRahmanResidualStressParameter [lindex $args [expr $i+1]]
-                incr i 1
+                set AbdelRahmanHardeningRatio [lindex $args [expr $i+2]]
+                incr i 2
             }
             continue
         }
@@ -188,7 +190,7 @@ proc OpenSeesComposite::ccftSection { secID startMatID nf1 nf2 units D t Fy Fu E
             hssSteelAbdelRahman $stlID $Fy $Es
         }
         ModifiedAbdelRahman {
-            hssSteelAbdelRahman $stlID $Fy $Es -ResidualStressParameter $AbdelRahmanResidualStressParameter
+            hssSteelAbdelRahman $stlID $Fy $Es -ResidualStressParameter $AbdelRahmanResidualStressParameter -HardeningRatio $AbdelRahmanHardeningRatio
         }
         Elastic {
             uniaxialMaterial Elastic $stlID $Es
