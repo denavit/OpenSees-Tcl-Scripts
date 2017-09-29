@@ -333,10 +333,10 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
                   set pi  [expr 2*asin(1.0)] 
                   set Afillet [expr (1-0.25*$pi)*$r*$r]
                   set Yfillet [expr 2/(12-3*$pi)*$r]
-                  fiber [expr  $d1-$Yfillet] [expr  $b1+$Yfillet] $Afillet $matID
-                  fiber [expr -$d1+$Yfillet] [expr  $b1+$Yfillet] $Afillet $matID
-                  fiber [expr  $d1-$Yfillet] [expr -$b1-$Yfillet] $Afillet $matID
-                  fiber [expr -$d1+$Yfillet] [expr -$b1-$Yfillet] $Afillet $matID
+                  fiber [expr  $d1-($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matID
+                  fiber [expr -$d1+($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matID
+                  fiber [expr  $d1-($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matID
+                  fiber [expr -$d1+($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matID
                 }
 
             } else {
