@@ -37,7 +37,7 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
     set steelMaterialType ProposedForBehavior
     set reinfMaterialType ProposedForBehavior
     set AddedElastic no
-    set GJ steelonly
+    set GJ max_steel_or_concrete_only
     set WideFlangeResidualStressParameter 1.0
 
     # ########### Check Required Input ###########
@@ -180,13 +180,29 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
     if { $za < $b1 } { set za $b1 }
     set zb $b2
 
+    
     # ########### Compute GJ if necessary ###########
+    set Gs  [expr $Es/(2*(1+0.3))]
+    set Js  [expr (2*$bf*pow($tf,3) + pow($tw,2)*($d-2*$tf))/3.0]
+
+    switch -exact -- $units {
+      US { set Ec [expr 1802.5*sqrt($fc)] }
+      SI { set Ec [expr 4733.0*sqrt($fc)] }
+      default { error "ERROR: units not recgonized" }
+    }
+    set Gc  [expr $Ec/(2*(1+0.2))]
+    set beta  [expr 1.0/3.0*(1-192.0/pow($pi,5)*$B/$H*tanh($pi*$H/(2.0*$B)))]      
+    set Jc  [expr $beta*$H*pow($B,3)]
+    
     if { $GJ == "steelonly" } {
-      set G  [expr $Es/(2*(1+0.3))]
-      set J  [expr (2*$bf*pow($tf,3) + pow($tw,2)*($d-2*$tf))/3.0]
-      set GJ [expr $G*$J]
+      set GJ [expr $Gs*$Js]
+    } elseif { $GJ == "concreteonly" } {
+      set GJ [expr $Gc*$Jc]
+    } elseif { $GJ == "max_steel_or_concrete_only" } {
+      set GJ [expr max($Gs*$Js,$Gc*$Jc)]
     }
 
+    
     # ########### Define Section by calling itself with secID = noSection ###########
     if { [string compare -nocase $secID "noSection"] != 0 } {
       section Fiber $secID -GJ $GJ {
