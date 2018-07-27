@@ -39,6 +39,9 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
     set AddedElastic no
     set GJ max_steel_or_concrete_only
     set WideFlangeResidualStressParameter 1.0
+    set DefineSteelFibers true
+    set DefineConcreteFibers true
+    set DefineReinforcingFibers true
 
     # ########### Check Required Input ###########
     set B   [expr double($B)]
@@ -136,6 +139,17 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
             }
             continue
         }
+        if { $param == "-noSteel" } {
+            set DefineSteelFibers false
+            incr i 1
+            continue
+        }
+        if { $param == "-noRC" } {
+            set DefineConcreteFibers false
+            set DefineReinforcingFibers false
+            incr i 1
+            continue
+        }
         error "Error - srcSection: unknown optional parameter: $param"
     }
 
@@ -213,240 +227,244 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
 
 
     # ########### Set Concrete Materials ###########
-    set coverConcID [expr $startMatID]
-    set medConfinedConcID  [expr $startMatID+1]
-    set highConfinedConcID [expr $startMatID+2]
-    switch -exact -- $concMaterialType {
-        ProposedForBehavior {
-            changManderConcreteMaterial $coverConcID $fc $units \
-                -cover -rn_pre ChangMander -rn_post 0.75
-            if { $hasReinf } {
-                changManderConcreteMaterial $medConfinedConcID $fc $units \
-                    -triaxial $flmedz $flmedy -rn_pre ChangMander -rn_post 0.75
-            } else {
+    if { $DefineConcreteFibers } {
+        set coverConcID [expr $startMatID]
+        set medConfinedConcID  [expr $startMatID+1]
+        set highConfinedConcID [expr $startMatID+2]
+        switch -exact -- $concMaterialType {
+            ProposedForBehavior {
+                changManderConcreteMaterial $coverConcID $fc $units \
+                    -cover -rn_pre ChangMander -rn_post 0.75
+                if { $hasReinf } {
+                    changManderConcreteMaterial $medConfinedConcID $fc $units \
+                        -triaxial $flmedz $flmedy -rn_pre ChangMander -rn_post 0.75
+                } else {
+                    set medConfinedConcID $coverConcID
+                }
+                changManderConcreteMaterial $highConfinedConcID $fc $units \
+                    -triaxial $flhighz $flhighy -rn_pre ChangMander -rn_post 0.75
+            }
+            ProposedForDesign {
+                changManderConcreteMaterial $coverConcID $fc $units \
+                    -cover -r Popovics -tension none
+                if { $hasReinf } {
+                    changManderConcreteMaterial $medConfinedConcID $fc $units \
+                        -triaxial $flmedz $flmedy -r Popovics -tension none
+                } else {
+                    set medConfinedConcID $coverConcID
+                }
+                changManderConcreteMaterial $highConfinedConcID $fc $units \
+                    -triaxial $flhighz $flhighy -r Popovics -tension none
+            }
+            ProposedForDesign_EI {
+                changManderConcreteMaterial $coverConcID $fc $units \
+                    -cover -r Popovics -tension Popovics
+                if { $hasReinf } {
+                    changManderConcreteMaterial $medConfinedConcID $fc $units \
+                        -triaxial $flmedz $flmedy -r Popovics -tension Popovics
+                } else {
+                    set medConfinedConcID $coverConcID
+                }
+                changManderConcreteMaterial $highConfinedConcID $fc $units \
+                    -triaxial $flhighz $flhighy -r Popovics -tension Popovics
+            }
+            Elastic {
+                switch -exact -- $units {
+                    US { set Ec [expr 1802.5*sqrt($fc)] }
+                    SI { set Ec [expr 4733.0*sqrt($fc)] }
+                    default { error "ERROR: units not recgonized" }
+                }
+                uniaxialMaterial Elastic $coverConcID $Ec
                 set medConfinedConcID $coverConcID
+                set highConfinedConcID $coverConcID
             }
-            changManderConcreteMaterial $highConfinedConcID $fc $units \
-                -triaxial $flhighz $flhighy -rn_pre ChangMander -rn_post 0.75
-        }
-        ProposedForDesign {
-            changManderConcreteMaterial $coverConcID $fc $units \
-                -cover -r Popovics -tension none
-            if { $hasReinf } {
-                changManderConcreteMaterial $medConfinedConcID $fc $units \
-                    -triaxial $flmedz $flmedy -r Popovics -tension none
-            } else {
+            ElasticNoTension {
+                switch -exact -- $units {
+                    US { set Ec [expr 1802.5*sqrt($fc)] }
+                    SI { set Ec [expr 4733.0*sqrt($fc)] }
+                    default { error "ERROR: units not recgonized" }
+                }
+                uniaxialMaterial ENT $coverConcID $Ec
                 set medConfinedConcID $coverConcID
+                set highConfinedConcID $coverConcID
             }
-            changManderConcreteMaterial $highConfinedConcID $fc $units \
-                -triaxial $flhighz $flhighy -r Popovics -tension none
-        }
-        ProposedForDesign_EI {
-            changManderConcreteMaterial $coverConcID $fc $units \
-                -cover -r Popovics -tension Popovics
-            if { $hasReinf } {
-                changManderConcreteMaterial $medConfinedConcID $fc $units \
-                    -triaxial $flmedz $flmedy -r Popovics -tension Popovics
-            } else {
-                set medConfinedConcID $coverConcID
+            default {
+                error "ERROR: srcSection: unknown concrete material type: $concMaterialType"
             }
-            changManderConcreteMaterial $highConfinedConcID $fc $units \
-                -triaxial $flhighz $flhighy -r Popovics -tension Popovics
         }
-        Elastic {
-            switch -exact -- $units {
-                US { set Ec [expr 1802.5*sqrt($fc)] }
-                SI { set Ec [expr 4733.0*sqrt($fc)] }
-                default { error "ERROR: units not recgonized" }
+
+
+        # ########### Define Concrete Fibers: 2d Strong ###########
+        if { $bendingType == "2dStrong" } {
+
+            # Define cover concrete
+            if { $coverB > 0.0 } {
+                set nfdi [expr int(ceil(($H)*($nf1/$H)))]
+                patchRect2d $coverConcID $nfdi [expr 2*$coverB] -$H1 $H1
             }
-            uniaxialMaterial Elastic $coverConcID $Ec
-            set medConfinedConcID $coverConcID
-            set highConfinedConcID $coverConcID
-        }
-        ElasticNoTension {
-            switch -exact -- $units {
-                US { set Ec [expr 1802.5*sqrt($fc)] }
-                SI { set Ec [expr 4733.0*sqrt($fc)] }
-                default { error "ERROR: units not recgonized" }
+            if { $coverH > 0.0 } {
+                set nfdi [expr int(ceil(($coverH)*($nf1/$H)))]
+                patchRect2d $coverConcID $nfdi [expr $B-2*$coverB] -$H1 -$H2
+                patchRect2d $coverConcID $nfdi [expr $B-2*$coverB]  $H2  $H1
             }
-            uniaxialMaterial ENT $coverConcID $Ec
-            set medConfinedConcID $coverConcID
-            set highConfinedConcID $coverConcID
-        }
-        default {
-            error "ERROR: srcSection: unknown concrete material type: $concMaterialType"
-        }
-    }
 
+            # Define medium confined concrete
+            set nfdi [expr int(ceil(($H2-$d2)*($nf1/$H)))]
+            patchRect2d $medConfinedConcID $nfdi [expr $B-2*$coverB] -$H2 -$d2
+            patchRect2d $medConfinedConcID $nfdi [expr $B-2*$coverB]  $d2  $H2
+            set nfdi [expr int(ceil(($tf)*($nf1/$H)))]
+            patchRect2d $medConfinedConcID $nfdi [expr $B-2*$coverB-$bf] -$d2 -$d1
+            patchRect2d $medConfinedConcID $nfdi [expr $B-2*$coverB-$bf]  $d1  $d2
 
-    # ########### Define Concrete Fibers: 2d Strong ###########
-    if { $bendingType == "2dStrong" } {
+            # Define concrete between the webs
+            set nfdw [expr int(ceil(($dw)*($nf1/$H)))]
+            set pa [expr ($zb-$za)/($d1*$d1)]
+            set pc $za
+            for { set i 1 } { $i <= $nfdw } { incr i } {
+                set di1  [expr -$d1 + ($i-1)*(2*$d1/$nfdw)]
+                set di2  [expr -$d1 + ($i  )*(2*$d1/$nfdw)]
+                set bh   [expr $pa*(($di1*$di1+$di1*$di2+$di2*$di2)/3.0)+$pc]
+                patchRect2d $highConfinedConcID 1 [expr 2*($bh-$b1)] $di1 $di2
+                patchRect2d $medConfinedConcID  1 [expr 2*($B2-$bh)] $di1 $di2
+            }
 
-        # Define cover concrete
-        if { $coverB > 0.0 } {
-            set nfdi [expr int(ceil(($H)*($nf1/$H)))]
-            patchRect2d $coverConcID $nfdi [expr 2*$coverB] -$H1 $H1
-        }
-        if { $coverH > 0.0 } {
-            set nfdi [expr int(ceil(($coverH)*($nf1/$H)))]
-            patchRect2d $coverConcID $nfdi [expr $B-2*$coverB] -$H1 -$H2
-            patchRect2d $coverConcID $nfdi [expr $B-2*$coverB]  $H2  $H1
-        }
+        # ########### Define Concrte Fibers: 2d Weak ###########
+        } elseif { $bendingType == "2dWeak" } {
 
-        # Define medium confined concrete
-        set nfdi [expr int(ceil(($H2-$d2)*($nf1/$H)))]
-        patchRect2d $medConfinedConcID $nfdi [expr $B-2*$coverB] -$H2 -$d2
-        patchRect2d $medConfinedConcID $nfdi [expr $B-2*$coverB]  $d2  $H2
-        set nfdi [expr int(ceil(($tf)*($nf1/$H)))]
-        patchRect2d $medConfinedConcID $nfdi [expr $B-2*$coverB-$bf] -$d2 -$d1
-        patchRect2d $medConfinedConcID $nfdi [expr $B-2*$coverB-$bf]  $d1  $d2
+            # Define cover concrete
+            if { $coverB > 0.0 } {
+                set nfbi [expr int(ceil(($coverB)*($nf1/$B)))]
+                patchRect2d $coverConcID $nfbi $H -$B1 -$B2
+                patchRect2d $coverConcID $nfbi $H  $B2  $B1
+            }
+            if { $coverH > 0.0 } {
+                set nfbi [expr int(ceil(($B-2*$coverB)*($nf1/$B)))]
+                patchRect2d $coverConcID $nfbi [expr 2*$coverH] -$B2 $B2
+            }
 
-        # Define concrete between the webs
-        set nfdw [expr int(ceil(($dw)*($nf1/$H)))]
-        set pa [expr ($zb-$za)/($d1*$d1)]
-        set pc $za
-        for { set i 1 } { $i <= $nfdw } { incr i } {
-            set di1  [expr -$d1 + ($i-1)*(2*$d1/$nfdw)]
-            set di2  [expr -$d1 + ($i  )*(2*$d1/$nfdw)]
-            set bh   [expr $pa*(($di1*$di1+$di1*$di2+$di2*$di2)/3.0)+$pc]
-            patchRect2d $highConfinedConcID 1 [expr 2*($bh-$b1)] $di1 $di2
-            patchRect2d $medConfinedConcID  1 [expr 2*($B2-$bh)] $di1 $di2
-        }
+            # Define medium confined concrete
+            set nfbi [expr int(ceil(($B2-$b2)*($nf1/$B)))]
+            patchRect2d $medConfinedConcID $nfbi [expr $H-2*$coverH]  -$B2 -$b2
+            patchRect2d $medConfinedConcID $nfbi [expr $H-2*$coverH]   $b2  $B2
+            set nfbi [expr int(ceil((2*$b2)*($nf1/$B)))]
+            patchRect2d $medConfinedConcID $nfbi [expr 2*($H2-$d2)]  -$b2  $b2
 
-    # ########### Define Concrte Fibers: 2d Weak ###########
-    } elseif { $bendingType == "2dWeak" } {
+            # Define concrete between the webs
+            set pa [expr ($zb-$za)/($d1*$d1)]
+            set pc $za
+            set nfbi [expr int(ceil(($za-$b1)*($nf1/$B)))]
+            if { $za > $b1 } {
+                patchRect2d $highConfinedConcID $nfbi $dw -$za -$b1
+                patchRect2d $highConfinedConcID $nfbi $dw  $b1  $za
+            }
+            set nfp [expr int(ceil(($zb-$za)*($nf1/$B)))]
+            for { set i 1 } { $i <= $nfp } { incr i } {
+                set di1  [expr $za + ($i-1)*(($zb-$za)/$nfp)]
+                set di2  [expr $za + ($i  )*(($zb-$za)/$nfp)]
+                set wmc  [expr (4.0/(3.0*sqrt($pa)*($di1-$di2)))*(pow($di1-$pc,1.5)-pow($di2-$pc,1.5))]
+                patchRect2d $highConfinedConcID 1 [expr $dw-$wmc] -$di2 -$di1
+                patchRect2d $highConfinedConcID 1 [expr $dw-$wmc]  $di1  $di2
+                patchRect2d $medConfinedConcID  1 $wmc            -$di2 -$di1
+                patchRect2d $medConfinedConcID  1 $wmc             $di1  $di2
+            }
+            if { $zb > $b2 } {
+                patchRect2d $medConfinedConcID  1 $dw -$b2 -$zb
+                patchRect2d $medConfinedConcID  1 $dw  $zb  $b2
+            }
 
-        # Define cover concrete
-        if { $coverB > 0.0 } {
-            set nfbi [expr int(ceil(($coverB)*($nf1/$B)))]
-            patchRect2d $coverConcID $nfbi $H -$B1 -$B2
-            patchRect2d $coverConcID $nfbi $H  $B2  $B1
-        }
-        if { $coverH > 0.0 } {
-            set nfbi [expr int(ceil(($B-2*$coverB)*($nf1/$B)))]
-            patchRect2d $coverConcID $nfbi [expr 2*$coverH] -$B2 $B2
-        }
+        # ########### Define Concrete Fibers: 3d ###########
+        } elseif { $bendingType == "3d" } {
 
-        # Define medium confined concrete
-        set nfbi [expr int(ceil(($B2-$b2)*($nf1/$B)))]
-        patchRect2d $medConfinedConcID $nfbi [expr $H-2*$coverH]  -$B2 -$b2
-        patchRect2d $medConfinedConcID $nfbi [expr $H-2*$coverH]   $b2  $B2
-        set nfbi [expr int(ceil((2*$b2)*($nf1/$B)))]
-        patchRect2d $medConfinedConcID $nfbi [expr 2*($H2-$d2)]  -$b2  $b2
+            # Define cover concrete
+            if { $coverB > 0.0 } {
+                set nfdi [expr int(ceil(($H)*($nf1/$H)))]
+                set nfbi [expr int(ceil(($coverB)*($nf1/$B)))]
+                patch quad $coverConcID $nfdi $nfbi $H1 -$B2 -$H1 -$B2 -$H1 -$B1 $H1 -$B1
+                patch quad $coverConcID $nfdi $nfbi $H1  $B1 -$H1  $B1 -$H1  $B2 $H1  $B2
+            }
+            if { $coverH > 0.0 } {
+                set nfdi [expr int(ceil(($coverH)*($nf1/$H)))]
+                set nfbi [expr int(ceil(($B-2*$coverB)*($nf2/$B)))]
+                patch quad $coverConcID $nfdi $nfbi  $H1 $B2  $H2 $B2  $H2 -$B2  $H1 -$B2
+                patch quad $coverConcID $nfdi $nfbi -$H2 $B2 -$H1 $B2 -$H1 -$B2 -$H2 -$B2
+            }
 
-        # Define concrete between the webs
-        set pa [expr ($zb-$za)/($d1*$d1)]
-        set pc $za
-        set nfbi [expr int(ceil(($za-$b1)*($nf1/$B)))]
-        if { $za > $b1 } {
-            patchRect2d $highConfinedConcID $nfbi $dw -$za -$b1
-            patchRect2d $highConfinedConcID $nfbi $dw  $b1  $za
-        }
-        set nfp [expr int(ceil(($zb-$za)*($nf1/$B)))]
-        for { set i 1 } { $i <= $nfp } { incr i } {
-            set di1  [expr $za + ($i-1)*(($zb-$za)/$nfp)]
-            set di2  [expr $za + ($i  )*(($zb-$za)/$nfp)]
-            set wmc  [expr (4.0/(3.0*sqrt($pa)*($di1-$di2)))*(pow($di1-$pc,1.5)-pow($di2-$pc,1.5))]
-            patchRect2d $highConfinedConcID 1 [expr $dw-$wmc] -$di2 -$di1
-            patchRect2d $highConfinedConcID 1 [expr $dw-$wmc]  $di1  $di2
-            patchRect2d $medConfinedConcID  1 $wmc            -$di2 -$di1
-            patchRect2d $medConfinedConcID  1 $wmc             $di1  $di2
-        }
-        if { $zb > $b2 } {
-            patchRect2d $medConfinedConcID  1 $dw -$b2 -$zb
-            patchRect2d $medConfinedConcID  1 $dw  $zb  $b2
-        }
-
-    # ########### Define Concrete Fibers: 3d ###########
-    } elseif { $bendingType == "3d" } {
-
-        # Define cover concrete
-        if { $coverB > 0.0 } {
-            set nfdi [expr int(ceil(($H)*($nf1/$H)))]
-            set nfbi [expr int(ceil(($coverB)*($nf1/$B)))]
-            patch quad $coverConcID $nfdi $nfbi $H1 -$B2 -$H1 -$B2 -$H1 -$B1 $H1 -$B1
-            patch quad $coverConcID $nfdi $nfbi $H1  $B1 -$H1  $B1 -$H1  $B2 $H1  $B2
-        }
-        if { $coverH > 0.0 } {
-            set nfdi [expr int(ceil(($coverH)*($nf1/$H)))]
+            # Define medium confined concrete
+            set nfdi [expr int(ceil(($H2-$d2)*($nf1/$H)))]
             set nfbi [expr int(ceil(($B-2*$coverB)*($nf2/$B)))]
-            patch quad $coverConcID $nfdi $nfbi  $H1 $B2  $H2 $B2  $H2 -$B2  $H1 -$B2
-            patch quad $coverConcID $nfdi $nfbi -$H2 $B2 -$H1 $B2 -$H1 -$B2 -$H2 -$B2
+            patch quad $medConfinedConcID $nfdi $nfbi  $H2 $B2  $d2 $B2  $d2 -$B2  $H2 -$B2
+            patch quad $medConfinedConcID $nfdi $nfbi -$d2 $B2 -$H2 $B2 -$H2 -$B2 -$d2 -$B2
+            set nfdi [expr int(ceil(($tf)*($nf1/$H)))]
+            set nfbi [expr int(ceil(($B2-$b2)*($nf2/$B)))]
+            patch quad $medConfinedConcID $nfdi $nfbi  $d2  $B2  $d1  $B2  $d1  $b2  $d2  $b2
+            patch quad $medConfinedConcID $nfdi $nfbi -$d1  $B2 -$d2  $B2 -$d2  $b2 -$d1  $b2
+            patch quad $medConfinedConcID $nfdi $nfbi  $d2 -$b2  $d1 -$b2  $d1 -$B2  $d2 -$B2
+            patch quad $medConfinedConcID $nfdi $nfbi -$d1 -$b2 -$d2 -$b2 -$d2 -$B2 -$d1 -$B2
+
+            # Define concrete between the webs
+            set nfdw [expr int(ceil(($dw)*($nf1/$H)))]
+            set pa [expr ($zb-$za)/($d1*$d1)]
+            set pc $za
+            for { set i 1 } { $i <= $nfdw } { incr i } {
+                set di1  [expr -$d1 + ($i-1)*(2*$d1/$nfdw)]
+                set di2  [expr -$d1 + ($i  )*(2*$d1/$nfdw)]
+                set bh   [expr $pa*(($di1*$di1+$di1*$di2+$di2*$di2)/3.0)+$pc]
+                set nfbh [expr int(ceil(($bh-$b1)*($nf2/$B)))]
+                set nfbm [expr int(ceil(($B2-$bh)*($nf2/$B)))]
+                patch quad $highConfinedConcID 1 $nfbh  $di2  $bh  $di1  $bh  $di1  $b1  $di2  $b1
+                patch quad $medConfinedConcID  1 $nfbm  $di2  $B2  $di1  $B2  $di1  $bh  $di2  $bh
+                patch quad $highConfinedConcID 1 $nfbh  $di2 -$b1  $di1 -$b1  $di1 -$bh  $di2 -$bh
+                patch quad $medConfinedConcID  1 $nfbm  $di2 -$bh  $di1 -$bh  $di1 -$B2  $di2 -$B2
+            }
+
+        } else {
+            error "Error - srcSection: unknown bendingAxis"
         }
-
-        # Define medium confined concrete
-        set nfdi [expr int(ceil(($H2-$d2)*($nf1/$H)))]
-        set nfbi [expr int(ceil(($B-2*$coverB)*($nf2/$B)))]
-        patch quad $medConfinedConcID $nfdi $nfbi  $H2 $B2  $d2 $B2  $d2 -$B2  $H2 -$B2
-        patch quad $medConfinedConcID $nfdi $nfbi -$d2 $B2 -$H2 $B2 -$H2 -$B2 -$d2 -$B2
-        set nfdi [expr int(ceil(($tf)*($nf1/$H)))]
-        set nfbi [expr int(ceil(($B2-$b2)*($nf2/$B)))]
-        patch quad $medConfinedConcID $nfdi $nfbi  $d2  $B2  $d1  $B2  $d1  $b2  $d2  $b2
-        patch quad $medConfinedConcID $nfdi $nfbi -$d1  $B2 -$d2  $B2 -$d2  $b2 -$d1  $b2
-        patch quad $medConfinedConcID $nfdi $nfbi  $d2 -$b2  $d1 -$b2  $d1 -$B2  $d2 -$B2
-        patch quad $medConfinedConcID $nfdi $nfbi -$d1 -$b2 -$d2 -$b2 -$d2 -$B2 -$d1 -$B2
-
-        # Define concrete between the webs
-        set nfdw [expr int(ceil(($dw)*($nf1/$H)))]
-        set pa [expr ($zb-$za)/($d1*$d1)]
-        set pc $za
-        for { set i 1 } { $i <= $nfdw } { incr i } {
-            set di1  [expr -$d1 + ($i-1)*(2*$d1/$nfdw)]
-            set di2  [expr -$d1 + ($i  )*(2*$d1/$nfdw)]
-            set bh   [expr $pa*(($di1*$di1+$di1*$di2+$di2*$di2)/3.0)+$pc]
-            set nfbh [expr int(ceil(($bh-$b1)*($nf2/$B)))]
-            set nfbm [expr int(ceil(($B2-$bh)*($nf2/$B)))]
-            patch quad $highConfinedConcID 1 $nfbh  $di2  $bh  $di1  $bh  $di1  $b1  $di2  $b1
-            patch quad $medConfinedConcID  1 $nfbm  $di2  $B2  $di1  $B2  $di1  $bh  $di2  $bh
-            patch quad $highConfinedConcID 1 $nfbh  $di2 -$b1  $di1 -$b1  $di1 -$bh  $di2 -$bh
-            patch quad $medConfinedConcID  1 $nfbm  $di2 -$bh  $di1 -$bh  $di1 -$B2  $di2 -$B2
-        }
-
-    } else {
-        error "Error - srcSection: unknown bendingAxis"
     }
 
 
     # ########### Define Steel Section ###########
-    if { $bendingType == "2dStrong" } {
-        set nf1i [expr ($d)*($nf1/$H)]
-        set nf2i strong
-    } elseif { $bendingType == "2dWeak" } {
-        set nf1i [expr ($bf)*($nf1/$B)]
-        set nf2i weak
-    } elseif { $bendingType == "3d" } {
-        set nf1i [expr ($d)*($nf1/$H)]
-        set nf2i [expr ($bf)*($nf2/$B)]
-    } else {
-        error "Error - srcSection: unknown bendingAxis"
-    }
-    set residualStress [expr -0.3*$Fy*$WideFlangeResidualStressParameter]
-    switch -exact -- $steelMaterialType {
-        Shen {
-            wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
-                -ShenSteel [expr $startMatID+3] $Es $Fy $Fu [expr 120*$Fy/$Es] $units \
-                -Lehigh $residualStress $numResidualStressDiv
+    if { $DefineSteelFibers } {    
+        if { $bendingType == "2dStrong" } {
+            set nf1i [expr ($d)*($nf1/$H)]
+            set nf2i strong
+        } elseif { $bendingType == "2dWeak" } {
+            set nf1i [expr ($bf)*($nf1/$B)]
+            set nf2i weak
+        } elseif { $bendingType == "3d" } {
+            set nf1i [expr ($d)*($nf1/$H)]
+            set nf2i [expr ($bf)*($nf2/$B)]
+        } else {
+            error "Error - srcSection: unknown bendingAxis"
         }
-        ElasticPP {
-            wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
-                -ElasticPP [expr $startMatID+3] $Es $Fy \
-                -Lehigh $residualStress $numResidualStressDiv
-        }
-        ElasticSmallStiffness {
-            wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
-                -ElasticSmallStiffness [expr $startMatID+3] $Es $Fy \
-                -Lehigh $residualStress $numResidualStressDiv
-        }
-        Elastic {
-            wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
-                -Elastic [expr $startMatID+3] $Es
-        }
-        default {
-            error "ERROR: srcSection: unknown steel material type: $steelMaterialType"
+        set residualStress [expr -0.3*$Fy*$WideFlangeResidualStressParameter]
+        switch -exact -- $steelMaterialType {
+            Shen {
+                wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
+                    -ShenSteel [expr $startMatID+3] $Es $Fy $Fu [expr 120*$Fy/$Es] $units \
+                    -Lehigh $residualStress $numResidualStressDiv
+            }
+            ElasticPP {
+                wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
+                    -ElasticPP [expr $startMatID+3] $Es $Fy \
+                    -Lehigh $residualStress $numResidualStressDiv
+            }
+            ElasticSmallStiffness {
+                wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
+                    -ElasticSmallStiffness [expr $startMatID+3] $Es $Fy \
+                    -Lehigh $residualStress $numResidualStressDiv
+            }
+            Elastic {
+                wfSection noSection $nf1i $nf2i $d $tw $bf $tf \
+                    -Elastic [expr $startMatID+3] $Es
+            }
+            default {
+                error "ERROR: srcSection: unknown steel material type: $steelMaterialType"
+            }
         }
     }
 
-    if { $hasReinf } {
+    if { $hasReinf && $DefineReinforcingFibers } {
         # ########### Set Longitudinal Reinforcing Steel Materials ###########
         set reinfSteelID [expr $startMatID+$numResidualStressDiv+4]
         switch -exact -- $reinfMaterialType {
