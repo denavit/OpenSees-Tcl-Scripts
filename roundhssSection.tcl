@@ -160,6 +160,9 @@ proc OpenSeesComposite::roundhssSection { secID startMatID nf1 nf2 units D t Fy 
     AbdelRahman {
       hssSteelAbdelRahman $stlID $Fy $Es
     }
+    AbdelRahman_LowHardening {
+      hssSteelAbdelRahman $stlID $Fy $Es -HardeningRatio 0.001
+    }
     ElasticPP {
       uniaxialMaterial ElasticPP $stlID $Es [expr $Fy/$Es]
     }

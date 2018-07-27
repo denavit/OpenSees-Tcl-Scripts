@@ -168,6 +168,10 @@ proc OpenSeesComposite::recthssSection { secID startMatID nf1 nf2 units D B t Fy
         hssSteelAbdelRahman $stlCornerID $Fy $Es -corner $Fu $t $t
         # r (internal radius) = t (wall thickness)
     }
+    AbdelRahman_LowHardening {
+        hssSteelAbdelRahman $stlFlatID   $Fy $Es -HardeningRatio 0.001
+        hssSteelAbdelRahman $stlCornerID $Fy $Es -corner $Fu $t $t -HardeningRatio 0.001
+    }
     ElasticPP {
         uniaxialMaterial ElasticPP $stlFlatID   $Es [expr $Fy/$Es]
         uniaxialMaterial ElasticPP $stlCornerID $Es [expr $Fy/$Es]
