@@ -197,7 +197,7 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
     
     # ########### Compute GJ if necessary ###########
     set Gs  [expr $Es/(2*(1+0.3))]
-    set Js  [expr (2*$bf*pow($tf,3) + pow($tw,2)*($d-2*$tf))/3.0]
+    set Js  [expr (2*$bf*pow($tf,3) + pow($tw,3)*($d-2*$tf))/3.0]
 
     switch -exact -- $units {
       US { set Ec [expr 1802.5*sqrt($fc)] }
