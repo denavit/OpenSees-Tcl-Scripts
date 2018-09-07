@@ -197,7 +197,7 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
     
     # ########### Compute GJ if necessary ###########
     set Gs  [expr $Es/(2*(1+0.3))]
-    set Js  [expr (2*$bf*pow($tf,3) + pow($tw,2)*($d-2*$tf))/3.0]
+    set Js  [expr (2*$bf*pow($tf,3) + pow($tw,3)*($d-2*$tf))/3.0]
 
     switch -exact -- $units {
       US { set Ec [expr 1802.5*sqrt($fc)] }
@@ -205,8 +205,15 @@ proc OpenSeesComposite::srcSection { secID startMatID nf1 nf2 units B H fc d tw 
       default { error "ERROR: units not recgonized" }
     }
     set Gc  [expr $Ec/(2*(1+0.2))]
-    set beta  [expr 1.0/3.0*(1-192.0/pow($pi,5)*$B/$H*tanh($pi*$H/(2.0*$B)))]      
-    set Jc  [expr $beta*$H*pow($B,3)]
+    if { $H >= $B } { 
+      set ar   [expr $H/$B]
+      set beta [expr (1-192.0/(pow($pi,5)*$ar)*(tanh($pi*$ar/2.0)+tanh(3*$pi*$ar/2.0)/243))/3.0]
+      set Jc   [expr $beta*$H*pow($B,3)]
+    } else {
+      set ar   [expr $B/$H]
+      set beta [expr (1-192.0/(pow($pi,5)*$ar)*(tanh($pi*$ar/2.0)+tanh(3*$pi*$ar/2.0)/243))/3.0]
+      set Jc   [expr $beta*$B*pow($H,3)]
+    }
     
     if { $GJ == "steelonly" } {
       set GJ [expr $Gs*$Js]
