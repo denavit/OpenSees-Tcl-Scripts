@@ -244,9 +244,9 @@ proc OpenSeesComposite::eigenRecorder { fileName numEigenValues {type -generaliz
     return [lindex $eigenList 0]
 }
 
-proc OpenSeesComposite::updateRayleighDamping { modeA ratioA modeB ratioB } {
+proc OpenSeesComposite::updateRayleighDamping { modeA ratioA modeB ratioB {solver -genBandArpack} } {
     # ###################################################################
-    # updateRayleighDamping $modeA $ratioA $modeB $ratioB
+    # updateRayleighDamping $modeA $ratioA $modeB $ratioB <$solver>
     # ###################################################################
     # Runs an eigenvalue analysis and set proportional damping based on
     # the current state of the structure
@@ -254,6 +254,7 @@ proc OpenSeesComposite::updateRayleighDamping { modeA ratioA modeB ratioB } {
     # Input Parameters:
     # modeA, modeB - modes that will have perscribed damping ratios
     # ratioA, ratioB - damping ratios perscribed at the specified modes
+    # solver - solver to be used (default: -genBandArpack)
 
     # Get natural frequencies at the desired modes
     if { $modeA > $modeB } {
@@ -262,7 +263,7 @@ proc OpenSeesComposite::updateRayleighDamping { modeA ratioA modeB ratioB } {
         set maxMode $modeB
     }
 
-    set eigs    [eigen $maxMode]
+    set eigs    [eigen $solver $maxMode]
     set freqA   [expr sqrt([lindex $eigs [expr $modeA-1]])]
     set freqB   [expr sqrt([lindex $eigs [expr $modeB-1]])]
 
