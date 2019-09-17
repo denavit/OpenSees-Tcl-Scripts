@@ -1,3 +1,5 @@
+package require json::write
+
 proc incr { varName {amount 1}} {
     # Example 7-6
     # Practical Programming in Tcl and Tk
@@ -328,4 +330,60 @@ proc OpenSeesComposite::simplePanelZoneMaterial {matTag Vu Ke {h 1}} {
   # Define material
   uniaxialMaterial multiSurfaceKinematicHardening $matTag \
     -StressStrainSymmetric $My $Qy $Mu $Qu $Ku
+}
+
+proc OpenSeesComposite::printModelGeometry {{path ""}} {
+    # ###################################################################
+    # printModelGeometry <$path>
+    # ###################################################################
+    # Print the geometry of the model in JSON format.
+    #
+    # Input Parameters:
+    # path - File to write the geometry data to. If none (default), print to
+    #        standard out.
+    #
+    # Notes:
+    # - Output formatting can be controlled by `json::write::aligned` and
+    #   `json::write::indented` (both default to true). If `aligned` is false,
+    #   then values will not be vertically aligned; if `indented` is false, the
+    #   output will not contain newlines or indentation (to minimize file size).
+    # - Output is consistent with the OpenSees `print -JSON` command for maximum
+    #   compatibility.
+
+    # Get data
+    set nodes [getNodeTags]
+    set numNodes [llength $nodes]
+    set elements [getEleTags]
+    set numElements [llength $elements]
+
+    # nodeDisp will fail if there are no nodes defined
+    if {[llength $nodes] > 0} {
+        set NDF [llength [nodeDisp [lindex $nodes 0]]]
+    } else {
+        set NDF {null}
+    }
+
+    # Format as JSON
+    set nodeJSON [list]
+    set elementJSON [list]
+    foreach node $nodes {
+        lappend nodeJSON [json::write object "name" $node "ndf" $NDF "crd" [json::write array {*}[nodeCoord $node]]]
+    }
+    foreach ele $elements {
+        lappend elementJSON [json::write object "name" $ele "nodes" [json::write array {*}[eleNodes $ele]]]
+    }
+    set geometry [json::write object "nodes" [json::write array {*}$nodeJSON] "elements" [json::write array {*}$elementJSON]]
+    set modelJSON [json::write object "StructuralAnalysisModel" [json::write object "geometry" $geometry]]
+
+    # Print it out
+    if {$path eq ""} {
+        puts $modelJSON
+    } else {
+        set fid [open $path w+]
+        try {
+            puts $fid $modelJSON
+        } finally {
+            close $fid
+        }
+    }
 }
