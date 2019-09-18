@@ -18,5 +18,6 @@ namespace eval OpenSeesComposite {
 
     # Export Miscellaneous Commands
     namespace export \
-        wShapeLookup eigenRecorder updateRayleighDamping printNodeCoordinates
+        wShapeLookup eigenRecorder updateRayleighDamping printNodeCoordinates \
+        printModelGeometry
 }
