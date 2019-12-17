@@ -28,7 +28,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
   #    - "-AddedElastic $EA $EI" for 2D sections
   #    - "-AddedElastic $EA $EIz $EIy $GJ" for 3D sections
   # Fillet
-  #    - "-Fillet $k" 
+  #    - "-Fillet $k"
 
 
   # ########### Set Constants and Default Values ###########
@@ -41,7 +41,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
   set GJ                     calc
   set Es                     0.0
 
-  # ########### Check Required Input ###########  
+  # ########### Check Required Input ###########
   set d    [expr double($d)]
   set tw   [expr double($tw)]
   set bf   [expr double($bf)]
@@ -84,11 +84,11 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
       set materialParams [lindex $args [expr $i+2]]
       incr i 2
       continue
-    }    
+    }
     if { $param == "-ElasticPP" } {
       set materialType   ElasticPP
       set currentMatTag  [lindex $args [expr $i+1]]
-      set materialParams [lrange $args [expr $i+2] [expr $i+3]] 
+      set materialParams [lrange $args [expr $i+2] [expr $i+3]]
       set Es             [lindex $args [expr $i+2]]
       incr i 3
       continue
@@ -96,8 +96,8 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
     if { $param == "-ElasticSmallStiffness" } {
       set materialType   ElasticSmallStiffness
       set currentMatTag  [lindex $args [expr $i+1]]
-      set materialParams [lrange $args [expr $i+2] [expr $i+3]] 
-      set Es             [lindex $args [expr $i+2]]   
+      set materialParams [lrange $args [expr $i+2] [expr $i+3]]
+      set Es             [lindex $args [expr $i+2]]
       incr i 3
       continue
     }
@@ -112,7 +112,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
     if { $param == "-ShenSteel" } {
       set materialType shenSteel
       set currentMatTag  [lindex $args [expr $i+1]]
-      set materialParams [lrange $args [expr $i+2] [expr $i+6]] 
+      set materialParams [lrange $args [expr $i+2] [expr $i+6]]
       set Es             [lindex $args [expr $i+2]]
       incr i 6
       continue
@@ -120,14 +120,14 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
     if { $param == "-ShenSteelDegrade" } {
       set materialType shenSteelDegrade
       set currentMatTag  [lindex $args [expr $i+1]]
-      set materialParams [lrange $args [expr $i+2] [expr $i+6]] 
+      set materialParams [lrange $args [expr $i+2] [expr $i+6]]
       set Es             [lindex $args [expr $i+2]]
       incr i 6
       continue
     }
     if { $param == "-Lehigh" } {
       set residualStressType   Lehigh
-      set residualStressParams [lrange $args [expr $i+1] [expr $i+2]] 
+      set residualStressParams [lrange $args [expr $i+1] [expr $i+2]]
       incr i 2
       continue
     }
@@ -142,11 +142,11 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
         incr i
         set AddedElasticEA [lindex $args $i]
         incr i
-        set AddedElasticEIz [lindex $args $i] 
+        set AddedElasticEIz [lindex $args $i]
         incr i
         set AddedElasticEIy [lindex $args $i]
         incr i
-        set AddedElasticGJ [lindex $args $i]       
+        set AddedElasticGJ [lindex $args $i]
       }
       continue
     }
@@ -161,7 +161,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
       continue
     }
     if { $param == "-GJ" } {
-      incr i      
+      incr i
       set GJ [lindex $args $i]
       continue
     }
@@ -182,7 +182,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
         # GJ unnecessary
         set GJ 0.0
       } elseif { $bendingType == "3d" } {
-        error "Error - wfSection: no E defined to calculate GJ" 
+        error "Error - wfSection: no E defined to calculate GJ"
       }
     } else {
       set G  [expr $Es/(2*(1+0.3))]
@@ -209,7 +209,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
     set Es    [expr double([lindex $materialParams 0])]
     set Fy    [expr double([lindex $materialParams 1])]
     set Fu    [expr double([lindex $materialParams 2])]
-    
+
     set LpLi [expr 0.405 - 0.0033*($dw/$tw) - 0.0268*(0.5*$bf/$tf) + 0.184*($Fu/$Fy-1)]
     set elb  [expr -$Fy/$Es*(1+100*$LpLi/(1-$LpLi))]
 
@@ -218,7 +218,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
 
 
 
-	if { $materialType == "matTag" } {
+    if { $materialType == "matTag" } {
         set matTag $currentMatTag
         # ########### Define Fibers: 2d Strong ###########
         if { $bendingType == "2dStrong" } {
@@ -239,7 +239,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
             error "Error - wfSection: unknown bendingAxis"
         }
 
-	} else {
+    } else {
         # ########### Define Fibers: Lehigh Residual Stress Pattern ###########
         if { $residualStressType == "Lehigh" } {
             set frc          [lindex $residualStressParams 0]
@@ -280,7 +280,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
                 # Fillets
                 if { $k > $tf } {
                   set r [expr $k-$tf]
-                  set pi  [expr 2*asin(1.0)] 
+                  set pi  [expr 2*asin(1.0)]
                   set Afillet [expr (1-0.25*$pi)*$r*$r]
                   set Yfillet [expr 2/(12-3*$pi)*$r]
                   fiber [expr  $d1-$Yfillet] 0.0 [expr 2*$Afillet] $matID
@@ -303,7 +303,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
                 # Fillets
                 if { $k > $tf } {
                   set r [expr $k-$tf]
-                  set pi  [expr 2*asin(1.0)] 
+                  set pi  [expr 2*asin(1.0)]
                   set Afillet [expr (1-0.25*$pi)*$r*$r]
                   set Yfillet [expr 2/(12-3*$pi)*$r]
                   fiber [expr  $b1+$Yfillet] 0.0 [expr 2*$Afillet] $matID
@@ -330,7 +330,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
                 # Fillets
                 if { $k > $tf } {
                   set r [expr $k-$tf]
-                  set pi  [expr 2*asin(1.0)] 
+                  set pi  [expr 2*asin(1.0)]
                   set Afillet [expr (1-0.25*$pi)*$r*$r]
                   set Yfillet [expr 2/(12-3*$pi)*$r]
                   fiber [expr  $d1-($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matID
@@ -342,10 +342,10 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
             } else {
                 error "Error - wfSection: unknown bendingAxis"
             }
-		} else {
+        } else {
             error "ERROR: residualStressType not recgonized: $residualStressType"
-		}
-	}
+        }
+    }
 
   # ########### Add elastic stiffness if necessary ###########
   if { $AddedElastic == "yes" } {
@@ -356,13 +356,13 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
     if { $bendingType == "2dStrong" || $bendingType == "2dWeak" } {
       twoFiberSection noSection $matID \
         [expr $AddedElasticEA/$ElasticE] \
-        [expr $AddedElasticEI/$ElasticE]        
+        [expr $AddedElasticEI/$ElasticE]
     } elseif { $bendingType == "3d" } {
       fourFiberSectionGJ noSection $matID \
         [expr $AddedElasticEA/$ElasticE] \
         [expr $AddedElasticEIy/$ElasticE] \
         [expr $AddedElasticEIz/$ElasticE] \
-        $AddedElasticGJ    
+        $AddedElasticGJ
     }
   }
 }
