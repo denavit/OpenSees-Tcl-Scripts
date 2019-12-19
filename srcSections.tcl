@@ -772,7 +772,7 @@ proc OpenSeesComposite::parseReinf { reinf bendingType B H d bf units } {
         set Ae      [expr $Ae*(1-$sprime/(2*$Bc))*(1-$sprime/(2*$Hc))]
 
         # Compute Confining Pressure
-        if { $dbTies == 0 } {
+        if { $Ae <= 0.0 || $dbTies == 0 } {
             set flmedz 0.0
             set flmedy 0.0
         } else {
