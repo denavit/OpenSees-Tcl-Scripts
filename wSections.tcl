@@ -20,6 +20,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
   #    - "-Elastic $matTag $Es" = utilizes an elastic material
   #    - "-ElasticPP $startMatTag $Es $Fy" = utilizes an elastically perfectly plastic (ElasticPP) material with residual stress pattern defined later
   #    - "-Steel02 $startMatTag $Es $Fy $b" = utilizes an Steel02 material with residual stress pattern defined later
+  #    - "-Hardening $startMatTag $Es $Fy $b" = utilizes multiSurfaceKinematicHardening material with residual stress pattern defined later
   #    - "-ShenSteel $startMatTag $Es $Fy $Fu $eu $units" = utilizes an ShenSteel01 material with residual stress pattern defined later
   #    - "-ShenSteelDegrade $startMatTag $Es $Fy $Fu $eu $units" = utilizes an ShenSteel01 material with residual stress pattern defined later
   # resStress - define the residual stress patten
@@ -99,6 +100,14 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
       set materialParams [lrange $args [expr $i+2] [expr $i+3]]
       set Es             [lindex $args [expr $i+2]]
       incr i 3
+      continue
+    }
+    if { $param == "-Hardening" } {
+      set materialType   Hardening
+      set currentMatTag  [lindex $args [expr $i+1]]
+      set materialParams [lrange $args [expr $i+2] [expr $i+4]]
+      set Es             [lindex $args [expr $i+2]]
+      incr i 4
       continue
     }
     if { $param == "-Steel02" } {
@@ -390,6 +399,12 @@ proc OpenSeesComposite::defineUniaxialMaterialWithResidualStress {matID fr mater
       set Es [expr double([lindex $args 0])]
       set Fy [expr double([lindex $args 1])]
       uniaxialMaterial multiSurfaceKinematicHardening $matID -initialStress $fr -Direct $Es 0.0 $Fy [expr $Es/1000.0]
+    }
+    Hardening {
+      set Es [expr double([lindex $args 0])]
+      set Fy [expr double([lindex $args 1])]
+      set b  [expr double([lindex $args 2])]
+      uniaxialMaterial multiSurfaceKinematicHardening $matID -initialStress $fr -Direct $Es 0.0 $Fy [expr $b*$Es]
     }
     Steel02 {
       set Es [expr double([lindex $args 0])]
