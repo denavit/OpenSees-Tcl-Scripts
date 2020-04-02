@@ -287,7 +287,14 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
               error "Error - wfSection: the compressive residual stress (frc) should be negative"
             }
 
-            set frt [expr -1*$frc*($bf*$tf)/($bf*$tf+$tw*$dw)]
+            if { $k > $tf } {
+              set r [expr $k-$tf]
+              set pi  [expr 2*asin(1.0)]
+              set Afillet [expr (1-0.25*$pi)*$r*$r]
+              set frt [expr -1*$frc*($bf*$tf)/($bf*$tf+$tw*$dw+4*$Afillet)]
+            } else {
+              set frt [expr -1*$frc*($bf*$tf)/($bf*$tf+$tw*$dw)]
+            }
 
             set LehighStartMatTag $currentMatTag
 
