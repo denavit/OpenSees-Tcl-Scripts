@@ -225,7 +225,10 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
     lappend materialParams $elb
   }
 
-
+  if { $residualStressType == "null" } {
+    eval defineUniaxialMaterialWithResidualStress $currentMatTag 0.0 $materialType $materialParams
+    set materialType matTag
+  }
 
     if { $materialType == "matTag" } {
         set matTag $currentMatTag
