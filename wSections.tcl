@@ -234,16 +234,45 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
             patchRect2d $matTag [expr ceil(($nf1/$d)*$tf)]         $bf  $d1  $d2
             patchRect2d $matTag [expr ceil(($nf1/$d)*($d-2*$tf))]  $tw -$d1  $d1
             patchRect2d $matTag [expr ceil(($nf1/$d)*$tf)]         $bf -$d2 -$d1
+            # Fillets
+            if { $k > $tf } {
+              set r [expr $k-$tf]
+              set pi  [expr 2*asin(1.0)]
+              set Afillet [expr (1-0.25*$pi)*$r*$r]
+              set Yfillet [expr 2/(12-3*$pi)*$r]
+              fiber [expr  $d1-$Yfillet] 0.0 [expr 2*$Afillet] $matTag
+              fiber [expr -$d1+$Yfillet] 0.0 [expr 2*$Afillet] $matTag
+            }
         # ########### Define Fibers: 2d Weak ###########
         } elseif { $bendingType == "2dWeak" } {
             patchRect2d $matTag [expr ceil(($nf1/$bf)*($bf-$tw)/2)]   [expr 2*$tf]  $b1  $b2
             patchRect2d $matTag [expr ceil(($nf1/$bf)*$tw)]          $d           -$b1  $b1
             patchRect2d $matTag [expr ceil(($nf1/$bf)*($bf-$tw)/2)]   [expr 2*$tf] -$b2 -$b1
+            # Fillets
+            if { $k > $tf } {
+              set r [expr $k-$tf]
+              set pi  [expr 2*asin(1.0)]
+              set Afillet [expr (1-0.25*$pi)*$r*$r]
+              set Yfillet [expr 2/(12-3*$pi)*$r]
+              fiber [expr  $b1+$Yfillet] 0.0 [expr 2*$Afillet] $matTag
+              fiber [expr -$b1-$Yfillet] 0.0 [expr 2*$Afillet] $matTag
+            }
         # ########### Define Fibers: 3d ###########
         } elseif { $bendingType == "3d" } {
             patch quad $matTag [expr int(ceil(($nf1/$d)*$tf))]       [expr int(ceil(($nf2/$bf)*$bf))]  $d1 -$b2  $d2 -$b2  $d2  $b2  $d1  $b2
             patch quad $matTag [expr int(ceil(($nf1/$d)*($d-2*$tf)))] [expr int(ceil(($nf2/$bf)*$tw))] -$d1 -$b1  $d1 -$b1  $d1  $b1 -$d1  $b1
             patch quad $matTag [expr int(ceil(($nf1/$d)*$tf))]       [expr int(ceil(($nf2/$bf)*$bf))] -$d2 -$b2 -$d1 -$b2 -$d1  $b2 -$d2  $b2
+            # Fillets
+            if { $k > $tf } {
+              set r [expr $k-$tf]
+              set pi  [expr 2*asin(1.0)]
+              set Afillet [expr (1-0.25*$pi)*$r*$r]
+              set Yfillet [expr 2/(12-3*$pi)*$r]
+              fiber [expr  $d1-($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matTag
+              fiber [expr -$d1+($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matTag
+              fiber [expr  $d1-($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matTag
+              fiber [expr -$d1+($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matTag
+            }
         } else {
             error "Error - wfSection: unknown bendingAxis"
         }
