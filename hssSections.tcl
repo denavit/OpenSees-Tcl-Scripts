@@ -172,6 +172,10 @@ proc OpenSeesComposite::recthssSection { secID startMatID nf1 nf2 units D B t Fy
         hssSteelAbdelRahman $stlFlatID   $Fy $Es -HardeningRatio 0.001
         hssSteelAbdelRahman $stlCornerID $Fy $Es -corner $Fu $t $t -HardeningRatio 0.001
     }
+    AbdelRahman_LowHardening_NoCorner {
+        hssSteelAbdelRahman $stlFlatID   $Fy $Es -HardeningRatio 0.001
+        hssSteelAbdelRahman $stlCornerID $Fy $Es -HardeningRatio 0.001
+    }
     Elastic {
         uniaxialMaterial Elastic $stlFlatID   $Es
         uniaxialMaterial Elastic $stlCornerID $Es
