@@ -10,4 +10,6 @@ package ifneeded OpenSeesComposite 0.1 "\
   [list source [file join $dir hssSections.tcl]]\n\
   [list source [file join $dir ccftSection.tcl]]\n\
   [list source [file join $dir rcftSection.tcl]]\n\
-  [list source [file join $dir srcSections.tcl]]"
+  [list source [file join $dir srcSections.tcl]]\n\
+  [list source [file join $dir RectangularRC.tcl]]\n\
+  [list source [file join $dir CircularRC.tcl]]"

@@ -14,7 +14,8 @@ namespace eval OpenSeesComposite {
     namespace export \
         roundhssSection recthssSection wfSection \
         ccftSection rcftSection srcSection \
-        fourFiberSectionGJ twoFiberSection
+        fourFiberSectionGJ twoFiberSection \
+        RectangularRC CircularRC
 
     # Export Miscellaneous Commands
     namespace export \
