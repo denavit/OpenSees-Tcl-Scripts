@@ -134,7 +134,7 @@ proc RectangularRC { secID startMatID nf1 nf2 units B H fc Ec cover fy fu Es db 
         set r [expr $flz/$fly]
     }
     set Amm     [expr 6.8886-(0.6069+17.275*$r)*exp(-4.989*$r)]
-    set Bmm     [expr 4.5/((5.0/$Amm)*(0.9849-0.6306)*exp(-3.8939*$r)-0.1)-5]
+    set Bmm     [expr 4.5/((5.0/$Amm)*(0.9849-0.6306*exp(-3.8939*$r))-0.1)-5]
     set K       [expr 1+$Amm*$xba*(0.1+0.9/(1+$Bmm*$xba))]
     set fcc     [expr $K*$fc]
     
