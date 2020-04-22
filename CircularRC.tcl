@@ -104,16 +104,20 @@ proc CircularRC { secID startMatID nf1 nf2 units D fc Ec cover fy fu Es db Ab nB
     set fcc     [expr $fc*(-1.254+2.254*sqrt(1+7.94*$fl/$fc)-2*$fl/$fc)]
 
     # Strain at Peak Stress
-    set ec      0.002
-    set ecc     [expr $ec*(1+5*($fcc/$fc-1))]
-    set ecu     0.05
-
+    switch -exact -- $units {
+        US { set ec [expr pow($fc*6.89476,0.25)/1150.0] }
+        SI { set ec [expr pow($fc,0.25)/1150.0] }
+        default { error "ERROR: units not recognized" }
+    }
+    set ecc [expr $ec*(1+5*($fcc/$fc-1.0))]
+    
 
     # ########### Define Concrete Materials ###########
     set coverConcID [expr $startMatID]
     set coreConcID  [expr $startMatID+1]
     switch -exact -- $conc_material {
         Concrete04 {
+            set ecu 0.05
             uniaxialMaterial Concrete04 $coverConcID -$fc -$ec -$ecu $Ec
             uniaxialMaterial Concrete04 $coreConcID -$fcc -$ecc -$ecu $Ec
         }
