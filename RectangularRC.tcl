@@ -59,7 +59,7 @@ proc OpenSeesComposite::RectangularRC { secID startMatID nf1 nf2 units B H fc Ec
         error "Error - RectangularRC: the number of fibers (nf1) should be positive"
     }
 
-    if { [string compare -nocase $nf2 "Z"] == 0 } {
+    if { [string compare -nocase $nf2 "Z"] == 0 || [string compare -nocase $nf2 "X"] == 0 } {
         set bendingType 2dZ
     } elseif { [string compare -nocase $nf2 "Y"] == 0 } {
         set bendingType 2dY
