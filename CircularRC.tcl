@@ -1,4 +1,4 @@
-proc CircularRC { secID startMatID nf1 nf2 units D fc Ec cover fy fu Es db Ab nBar fyt dbt Abt s transverse_reinf_type conc_material steel_material} {
+proc OpenSeesComposite::CircularRC { secID startMatID nf1 nf2 units D fc Ec cover fy fu Es db Ab nBar fyt dbt Abt s transverse_reinf_type conc_material steel_material} {
     # ###################################################################  
     # CircularRC $secID $startMatID $nf1 $nf2 $units $D $fc $Ec $cover $fy $fu $Es $db $Ab $nBar $fyt $dbt $Abt $s $transverse_reinf_type $conc_material $steel_material
     # ###################################################################

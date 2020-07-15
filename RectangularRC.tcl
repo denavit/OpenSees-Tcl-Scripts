@@ -1,4 +1,4 @@
-proc RectangularRC { secID startMatID nf1 nf2 units B H fc Ec cover fy fu Es db Ab nBarX nBarY fyt dbt Abt nLegX nLegY s conc_material steel_material} {
+proc OpenSeesComposite::RectangularRC { secID startMatID nf1 nf2 units B H fc Ec cover fy fu Es db Ab nBarX nBarY fyt dbt Abt nLegX nLegY s conc_material steel_material} {
     # ###################################################################  
     # RectangularRC $secID $startMatID $nf1 $nf2 $units $B $H $fc $Ec $cover $fy $fu $Es $db $Ab $nBarX $nBarY $fyt $dbt $Abt $nLegX $nLegY $s $conc_material $steel_material
     # ###################################################################
