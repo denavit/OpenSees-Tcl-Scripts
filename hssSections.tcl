@@ -9,8 +9,8 @@ proc OpenSeesComposite::recthssSection { secID startMatID nf1 nf2 units D B t Fy
   # startMatID - starting number for the material that will be defined
   # nf1 = number of fibers along the primary bending axis (strong axis for 3d)
   # nf2 = number of fibers along the secondary bending axis
-  #    - strong = creates a 2d section for strong axis bending
-  #    - weak   = creates a 2d section for weak axis bending
+  #    - x = creates a 2d section for bending about the x axis
+  #    - y = creates a 2d section for bending about the y axis
   # units - unit system
   #    US = United States customary units (i.e., kips, inches, ksi)
   #    SI = International System of Units (i.e., N, mm, MPa)
@@ -45,10 +45,10 @@ proc OpenSeesComposite::recthssSection { secID startMatID nf1 nf2 units D B t Fy
     error "Error - recthssSection: the number of fibers (nf1) should be positive"
   }
 
-  if { [string compare -nocase $nf2 "strong"] == 0 } {
-    set bendingType 2dStrong
-  } elseif { [string compare -nocase $nf2 "weak"] == 0 } {
-    set bendingType 2dWeak
+  if { [string compare -nocase $nf2 "x"] == 0 || [string compare -nocase $nf2 "z"] == 0 } {
+    set bendingType 2dx
+  } elseif { [string compare -nocase $nf2 "y"] == 0 } {
+    set bendingType 2dy
   } else {
     set bendingType 3d
     set nf2 [expr int($nf2)]
@@ -95,7 +95,7 @@ proc OpenSeesComposite::recthssSection { secID startMatID nf1 nf2 units D B t Fy
     }
     if { $param == "-AddedElastic" } {
       set AddedElastic yes
-      if { $bendingType == "2dStrong" || $bendingType == "2dWeak" } {
+      if { $bendingType == "2dx" || $bendingType == "2dy" } {
         incr i
         set AddedElasticEA [lindex $args $i]
         incr i
@@ -199,7 +199,7 @@ proc OpenSeesComposite::recthssSection { secID startMatID nf1 nf2 units D B t Fy
 
 
   # ########### Define Section: 2d Strong ###########
-  if { $bendingType == "2dStrong" } {
+  if { $bendingType == "2dx" } {
 
     # Steel Flat, Webs
     patchRect2d $stlFlatID [expr ceil(($D-4*$t)*($nf1/$D))] [expr 2*$t] [expr -$D/2+2*$t] [expr $D/2-2*$t]
@@ -218,7 +218,7 @@ proc OpenSeesComposite::recthssSection { secID startMatID nf1 nf2 units D B t Fy
 
 
   # ########### 2d Weak ###########
-  } elseif { $bendingType == "2dWeak" } {
+  } elseif { $bendingType == "2dy" } {
 
     # Steel Flat, Webs
     patchRect2d $stlFlatID [expr ceil(($B-4*$t)*($nf1/$B))] [expr 2*$t] [expr -$B/2+2*$t] [expr $B/2-2*$t]
@@ -338,7 +338,7 @@ proc OpenSeesComposite::recthssSection { secID startMatID nf1 nf2 units D B t Fy
     set matID [expr $startMatID+2]
     incr currentMatTag
     uniaxialMaterial Elastic $matID $ElasticE
-    if { $bendingType == "2dStrong" || $bendingType == "2dWeak" } {
+    if { $bendingType == "2dx" || $bendingType == "2dy" } {
       twoFiberSection noSection $matID \
           [expr $AddedElasticEA/$ElasticE] \
           [expr $AddedElasticEI/$ElasticE]        

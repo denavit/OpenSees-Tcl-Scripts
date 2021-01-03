@@ -9,8 +9,8 @@ proc OpenSeesComposite::roundhssSection { secID startMatID nf1 nf2 units D t Fy 
   # startMatID - starting number for the material that will be defined
   # nf1 = number of fibers along the primary bending axis (strong axis for 3d)
   # nf2 = number of fibers along the secondary bending axis
-  #    - strong = creates a 2d section for strong axis bending
-  #    - weak   = creates a 2d section for weak axis bending
+  #    - x = creates a 2d section for bending about the x axis
+  #    - y = creates a 2d section for bending about the y axis
   # units - unit system
   #    US = United States customary units (i.e., kips, inches, ksi)
   #    SI = International System of Units (i.e., N, mm, MPa)
@@ -43,10 +43,10 @@ proc OpenSeesComposite::roundhssSection { secID startMatID nf1 nf2 units D t Fy 
     error "Error - roundhssSection: the number of fibers (nf1) should be positive"
   }
 
-  if { [string compare -nocase $nf2 "strong"] == 0 } {
-    set bendingType 2dStrong
-  } elseif { [string compare -nocase $nf2 "weak"] == 0 } {
-    set bendingType 2dWeak
+  if { [string compare -nocase $nf2 "x"] == 0 } {
+    set bendingType 2d
+  } elseif { [string compare -nocase $nf2 "y"] == 0 } {
+    set bendingType 2d
   } else {
     set bendingType 3d
     set nf2 [expr int($nf2)]
@@ -90,7 +90,7 @@ proc OpenSeesComposite::roundhssSection { secID startMatID nf1 nf2 units D t Fy 
     }
     if { $param == "-AddedElastic" } {
       set AddedElastic yes
-      if { $bendingType == "2dStrong" || $bendingType == "2dWeak" } {
+      if { $bendingType == "2d" } {
         incr i
         set AddedElasticEA [lindex $args $i]
         incr i
@@ -180,7 +180,7 @@ proc OpenSeesComposite::roundhssSection { secID startMatID nf1 nf2 units D t Fy 
 
 
   # ########### Define Section: 2d ###########
-  if { $bendingType == "2dStrong" || $bendingType == "2dWeak" } {
+  if { $bendingType == "2d" } {
 
     patchHalfCircTube2d $stlID [expr ceil($ro*($nf1/$D))] 0.0 top    $D $t
     patchHalfCircTube2d $stlID [expr ceil($ro*($nf1/$D))] 0.0 bottom $D $t
@@ -207,7 +207,7 @@ proc OpenSeesComposite::roundhssSection { secID startMatID nf1 nf2 units D t Fy 
     set matID [expr $startMatID+2]
     incr currentMatTag
     uniaxialMaterial Elastic $matID $ElasticE
-    if { $bendingType == "2dStrong" || $bendingType == "2dWeak" } {
+    if { $bendingType == "2d" } {
       twoFiberSection noSection $matID \
           [expr $AddedElasticEA/$ElasticE] \
           [expr $AddedElasticEI/$ElasticE]        
