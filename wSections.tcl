@@ -230,170 +230,170 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
     set materialType matTag
   }
 
-    if { $materialType == "matTag" } {
-        set matTag $currentMatTag
-        # ########### Define Fibers: 2d Strong ###########
-        if { $bendingType == "2dStrong" } {
-            patchRect2d $matTag [expr ceil(($nf1/$d)*$tf)]         $bf  $d1  $d2
-            patchRect2d $matTag [expr ceil(($nf1/$d)*($d-2*$tf))]  $tw -$d1  $d1
-            patchRect2d $matTag [expr ceil(($nf1/$d)*$tf)]         $bf -$d2 -$d1
-            # Fillets
-            if { $k > $tf } {
-              set r [expr $k-$tf]
-              set pi  [expr 2*asin(1.0)]
-              set Afillet [expr (1-0.25*$pi)*$r*$r]
-              set Yfillet [expr 2/(12-3*$pi)*$r]
-              fiber [expr  $d1-$Yfillet] 0.0 [expr 2*$Afillet] $matTag
-              fiber [expr -$d1+$Yfillet] 0.0 [expr 2*$Afillet] $matTag
-            }
-        # ########### Define Fibers: 2d Weak ###########
-        } elseif { $bendingType == "2dWeak" } {
-            patchRect2d $matTag [expr ceil(($nf1/$bf)*($bf-$tw)/2)]   [expr 2*$tf]  $b1  $b2
-            patchRect2d $matTag [expr ceil(($nf1/$bf)*$tw)]          $d           -$b1  $b1
-            patchRect2d $matTag [expr ceil(($nf1/$bf)*($bf-$tw)/2)]   [expr 2*$tf] -$b2 -$b1
-            # Fillets
-            if { $k > $tf } {
-              set r [expr $k-$tf]
-              set pi  [expr 2*asin(1.0)]
-              set Afillet [expr (1-0.25*$pi)*$r*$r]
-              set Yfillet [expr 2/(12-3*$pi)*$r]
-              fiber [expr  $b1+$Yfillet] 0.0 [expr 2*$Afillet] $matTag
-              fiber [expr -$b1-$Yfillet] 0.0 [expr 2*$Afillet] $matTag
-            }
-        # ########### Define Fibers: 3d ###########
-        } elseif { $bendingType == "3d" } {
-            patch quad $matTag [expr int(ceil(($nf1/$d)*$tf))]       [expr int(ceil(($nf2/$bf)*$bf))]  $d1 -$b2  $d2 -$b2  $d2  $b2  $d1  $b2
-            patch quad $matTag [expr int(ceil(($nf1/$d)*($d-2*$tf)))] [expr int(ceil(($nf2/$bf)*$tw))] -$d1 -$b1  $d1 -$b1  $d1  $b1 -$d1  $b1
-            patch quad $matTag [expr int(ceil(($nf1/$d)*$tf))]       [expr int(ceil(($nf2/$bf)*$bf))] -$d2 -$b2 -$d1 -$b2 -$d1  $b2 -$d2  $b2
-            # Fillets
-            if { $k > $tf } {
-              set r [expr $k-$tf]
-              set pi  [expr 2*asin(1.0)]
-              set Afillet [expr (1-0.25*$pi)*$r*$r]
-              set Yfillet [expr 2/(12-3*$pi)*$r]
-              fiber [expr  $d1-($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matTag
-              fiber [expr -$d1+($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matTag
-              fiber [expr  $d1-($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matTag
-              fiber [expr -$d1+($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matTag
-            }
-        } else {
-            error "Error - wfSection: unknown bendingAxis"
-        }
-
+  if { $materialType == "matTag" } {
+    set matTag $currentMatTag
+    # ########### Define Fibers: 2d Strong ###########
+    if { $bendingType == "2dStrong" } {
+      patchRect2d $matTag [expr ceil(($nf1/$d)*$tf)]         $bf  $d1  $d2
+      patchRect2d $matTag [expr ceil(($nf1/$d)*($d-2*$tf))]  $tw -$d1  $d1
+      patchRect2d $matTag [expr ceil(($nf1/$d)*$tf)]         $bf -$d2 -$d1
+      # Fillets
+      if { $k > $tf } {
+        set r [expr $k-$tf]
+        set pi  [expr 2*asin(1.0)]
+        set Afillet [expr (1-0.25*$pi)*$r*$r]
+        set Yfillet [expr 2/(12-3*$pi)*$r]
+        fiber [expr  $d1-$Yfillet] 0.0 [expr 2*$Afillet] $matTag
+        fiber [expr -$d1+$Yfillet] 0.0 [expr 2*$Afillet] $matTag
+      }
+    # ########### Define Fibers: 2d Weak ###########
+    } elseif { $bendingType == "2dWeak" } {
+      patchRect2d $matTag [expr ceil(($nf1/$bf)*($bf-$tw)/2)]   [expr 2*$tf]  $b1  $b2
+      patchRect2d $matTag [expr ceil(($nf1/$bf)*$tw)]           $d           -$b1  $b1
+      patchRect2d $matTag [expr ceil(($nf1/$bf)*($bf-$tw)/2)]   [expr 2*$tf] -$b2 -$b1
+      # Fillets
+      if { $k > $tf } {
+        set r [expr $k-$tf]
+        set pi  [expr 2*asin(1.0)]
+        set Afillet [expr (1-0.25*$pi)*$r*$r]
+        set Yfillet [expr 2/(12-3*$pi)*$r]
+        fiber [expr  $b1+$Yfillet] 0.0 [expr 2*$Afillet] $matTag
+        fiber [expr -$b1-$Yfillet] 0.0 [expr 2*$Afillet] $matTag
+      }
+    # ########### Define Fibers: 3d ###########
+    } elseif { $bendingType == "3d" } {
+      patch quad $matTag [expr int(ceil(($nf1/$d)*$tf))]        [expr int(ceil(($nf2/$bf)*$bf))]  $d1 -$b2  $d2 -$b2  $d2  $b2  $d1  $b2
+      patch quad $matTag [expr int(ceil(($nf1/$d)*($d-2*$tf)))] [expr int(ceil(($nf2/$bf)*$tw))] -$d1 -$b1  $d1 -$b1  $d1  $b1 -$d1  $b1
+      patch quad $matTag [expr int(ceil(($nf1/$d)*$tf))]        [expr int(ceil(($nf2/$bf)*$bf))] -$d2 -$b2 -$d1 -$b2 -$d1  $b2 -$d2  $b2
+      # Fillets
+      if { $k > $tf } {
+        set r [expr $k-$tf]
+        set pi  [expr 2*asin(1.0)]
+        set Afillet [expr (1-0.25*$pi)*$r*$r]
+        set Yfillet [expr 2/(12-3*$pi)*$r]
+        fiber [expr  $d1-($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matTag
+        fiber [expr -$d1+($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matTag
+        fiber [expr  $d1-($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matTag
+        fiber [expr -$d1+($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matTag
+      }
     } else {
-        # ########### Define Fibers: Lehigh Residual Stress Pattern ###########
-        if { $residualStressType == "Lehigh" } {
-            set frc          [lindex $residualStressParams 0]
-            set numSectors   [lindex $residualStressParams 1]
-
-            if { $frc > 0 } {
-              error "Error - wfSection: the compressive residual stress (frc) should be negative"
-            }
-
-            if { $k > $tf } {
-              set r [expr $k-$tf]
-              set pi  [expr 2*asin(1.0)]
-              set Afillet [expr (1-0.25*$pi)*$r*$r]
-              set frt [expr -1*$frc*($bf*$tf)/($bf*$tf+$tw*$dw+4*$Afillet)]
-            } else {
-              set frt [expr -1*$frc*($bf*$tf)/($bf*$tf+$tw*$dw)]
-            }
-
-            set LehighStartMatTag $currentMatTag
-
-            for { set i 1 } { $i <= $numSectors } { incr i } {
-                set matID    $currentMatTag
-                incr currentMatTag
-                set x        [expr (double($i)-0.5)/double($numSectors)]
-                set fr       [expr $frc + $x*($frt-$frc)]
-                # Define Materials
-                eval defineUniaxialMaterialWithResidualStress $matID $fr $materialType $materialParams
-            }
-            set matID $currentMatTag
-            incr currentMatTag
-            eval defineUniaxialMaterialWithResidualStress $matID $frt $materialType $materialParams
-
-            # ########### Define Fibers: 2d Strong ###########
-            if { $bendingType == "2dStrong" } {
-                # Flanges
-                set bf1 [expr (1.0/double($numSectors))*$bf]
-                for { set i 1 } { $i <= $numSectors } { incr i } {
-                    set matID [expr $LehighStartMatTag+($i-1)]
-                    patchRect2d $matID [expr int(ceil(($nf1/$d)*$tf))]  $bf1  $d1  $d2
-                    patchRect2d $matID [expr int(ceil(($nf1/$d)*$tf))]  $bf1 -$d2 -$d1
-                }
-                # Web
-                set matID [expr $LehighStartMatTag+$numSectors]
-                patchRect2d $matID [expr int(ceil(($nf1/$d)*($d-2*$tf)))]  $tw -$d1  $d1
-                # Fillets
-                if { $k > $tf } {
-                  set r [expr $k-$tf]
-                  set pi  [expr 2*asin(1.0)]
-                  set Afillet [expr (1-0.25*$pi)*$r*$r]
-                  set Yfillet [expr 2/(12-3*$pi)*$r]
-                  fiber [expr  $d1-$Yfillet] 0.0 [expr 2*$Afillet] $matID
-                  fiber [expr -$d1+$Yfillet] 0.0 [expr 2*$Afillet] $matID
-                }
-
-            # ########### Define Fibers: 2d Weak ###########
-            } elseif { $bendingType == "2dWeak" } {
-                # Flanges
-                set b21 [expr (1.0/double($numSectors))*$b2]
-                for { set i 1 } { $i <= $numSectors } { incr i } {
-                    set bft [expr $b2 - double($i-1)*$b21]
-                    set matID [expr $LehighStartMatTag+($i-1)]
-                    patchRect2d $matID [expr int(ceil(($nf1/$bf)*$b21))] [expr 2*$tf]  [expr $bft-$b21] $bft
-                    patchRect2d $matID [expr int(ceil(($nf1/$bf)*$b21))] [expr 2*$tf]  -$bft [expr -$bft+$b21]
-                }
-                # Web
-                set matID [expr $LehighStartMatTag+$numSectors]
-                patchRect2d $matID [expr int(ceil(($nf1/$bf)*($tw)))] $dw -$b1  $b1
-                # Fillets
-                if { $k > $tf } {
-                  set r [expr $k-$tf]
-                  set pi  [expr 2*asin(1.0)]
-                  set Afillet [expr (1-0.25*$pi)*$r*$r]
-                  set Yfillet [expr 2/(12-3*$pi)*$r]
-                  fiber [expr  $b1+$Yfillet] 0.0 [expr 2*$Afillet] $matID
-                  fiber [expr -$b1-$Yfillet] 0.0 [expr 2*$Afillet] $matID
-                }
-
-            # ########### Define Fibers: 3d ###########
-            } elseif { $bendingType == "3d" } {
-                # Flanges
-                set bf1 [expr (1.0/double($numSectors))*($bf/2.0)]
-                for { set i 1 } { $i <= $numSectors } { incr i } {
-                    set matID [expr $LehighStartMatTag+($i-1)]
-                    set b2i   [expr $b2-$bf1*($i-1)]
-                    set b1i   [expr $b2i-$bf1]
-                    if { $b1i < 0 } { set b1i 0.0 }
-                    patch quad $matID [expr int(ceil(($nf1/$d)*$tf))] [expr int(ceil(($nf2/$bf)*$bf1))]  $d1 -$b2i  $d2 -$b2i  $d2 -$b1i  $d1 -$b1i
-                    patch quad $matID [expr int(ceil(($nf1/$d)*$tf))] [expr int(ceil(($nf2/$bf)*$bf1))]  $d1  $b1i  $d2  $b1i  $d2  $b2i  $d1  $b2i
-                    patch quad $matID [expr int(ceil(($nf1/$d)*$tf))] [expr int(ceil(($nf2/$bf)*$bf1))] -$d2 -$b2i -$d1 -$b2i -$d1 -$b1i -$d2 -$b1i
-                    patch quad $matID [expr int(ceil(($nf1/$d)*$tf))] [expr int(ceil(($nf2/$bf)*$bf1))] -$d2  $b1i -$d1  $b1i -$d1  $b2i -$d2  $b2i
-                }
-                # Web
-                set matID [expr $LehighStartMatTag+$numSectors]
-                patch quad $matID [expr int(ceil(($nf1/$d)*$dw))] [expr int(ceil(($nf2/$bf)*$tw))] -$d1 -$b1 $d1 -$b1 $d1 $b1 -$d1 $b1
-                # Fillets
-                if { $k > $tf } {
-                  set r [expr $k-$tf]
-                  set pi  [expr 2*asin(1.0)]
-                  set Afillet [expr (1-0.25*$pi)*$r*$r]
-                  set Yfillet [expr 2/(12-3*$pi)*$r]
-                  fiber [expr  $d1-($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matID
-                  fiber [expr -$d1+($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matID
-                  fiber [expr  $d1-($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matID
-                  fiber [expr -$d1+($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matID
-                }
-
-            } else {
-                error "Error - wfSection: unknown bendingAxis"
-            }
-        } else {
-            error "ERROR: residualStressType not recgonized: $residualStressType"
-        }
+      error "Error - wfSection: unknown bendingAxis"
     }
+
+  } else {
+    # ########### Define Fibers: Lehigh Residual Stress Pattern ###########
+    if { $residualStressType == "Lehigh" } {
+      set frc          [lindex $residualStressParams 0]
+      set numSectors   [lindex $residualStressParams 1]
+
+      if { $frc > 0 } {
+        error "Error - wfSection: the compressive residual stress (frc) should be negative"
+      }
+
+      if { $k > $tf } {
+        set r [expr $k-$tf]
+        set pi  [expr 2*asin(1.0)]
+        set Afillet [expr (1-0.25*$pi)*$r*$r]
+        set frt [expr -1*$frc*($bf*$tf)/($bf*$tf+$tw*$dw+4*$Afillet)]
+      } else {
+        set frt [expr -1*$frc*($bf*$tf)/($bf*$tf+$tw*$dw)]
+      }
+
+      set LehighStartMatTag $currentMatTag
+
+      for { set i 1 } { $i <= $numSectors } { incr i } {
+        set matID    $currentMatTag
+        incr currentMatTag
+        set x        [expr (double($i)-0.5)/double($numSectors)]
+        set fr       [expr $frc + $x*($frt-$frc)]
+        # Define Materials
+        eval defineUniaxialMaterialWithResidualStress $matID $fr $materialType $materialParams
+      }
+      set matID $currentMatTag
+      incr currentMatTag
+      eval defineUniaxialMaterialWithResidualStress $matID $frt $materialType $materialParams
+
+      # ########### Define Fibers: 2d Strong ###########
+      if { $bendingType == "2dStrong" } {
+        # Flanges
+        set bf1 [expr (1.0/double($numSectors))*$bf]
+        for { set i 1 } { $i <= $numSectors } { incr i } {
+          set matID [expr $LehighStartMatTag+($i-1)]
+          patchRect2d $matID [expr int(ceil(($nf1/$d)*$tf))]  $bf1  $d1  $d2
+          patchRect2d $matID [expr int(ceil(($nf1/$d)*$tf))]  $bf1 -$d2 -$d1
+        }
+        # Web
+        set matID [expr $LehighStartMatTag+$numSectors]
+        patchRect2d $matID [expr int(ceil(($nf1/$d)*($d-2*$tf)))]  $tw -$d1  $d1
+        # Fillets
+        if { $k > $tf } {
+          set r [expr $k-$tf]
+          set pi  [expr 2*asin(1.0)]
+          set Afillet [expr (1-0.25*$pi)*$r*$r]
+          set Yfillet [expr 2/(12-3*$pi)*$r]
+          fiber [expr  $d1-$Yfillet] 0.0 [expr 2*$Afillet] $matID
+          fiber [expr -$d1+$Yfillet] 0.0 [expr 2*$Afillet] $matID
+        }
+
+      # ########### Define Fibers: 2d Weak ###########
+      } elseif { $bendingType == "2dWeak" } {
+        # Flanges
+        set b21 [expr (1.0/double($numSectors))*$b2]
+        for { set i 1 } { $i <= $numSectors } { incr i } {
+          set bft [expr $b2 - double($i-1)*$b21]
+          set matID [expr $LehighStartMatTag+($i-1)]
+          patchRect2d $matID [expr int(ceil(($nf1/$bf)*$b21))] [expr 2*$tf]  [expr $bft-$b21] $bft
+          patchRect2d $matID [expr int(ceil(($nf1/$bf)*$b21))] [expr 2*$tf]  -$bft [expr -$bft+$b21]
+        }
+        # Web
+        set matID [expr $LehighStartMatTag+$numSectors]
+        patchRect2d $matID [expr int(ceil(($nf1/$bf)*($tw)))] $dw -$b1  $b1
+        # Fillets
+        if { $k > $tf } {
+          set r [expr $k-$tf]
+          set pi  [expr 2*asin(1.0)]
+          set Afillet [expr (1-0.25*$pi)*$r*$r]
+          set Yfillet [expr 2/(12-3*$pi)*$r]
+          fiber [expr  $b1+$Yfillet] 0.0 [expr 2*$Afillet] $matID
+          fiber [expr -$b1-$Yfillet] 0.0 [expr 2*$Afillet] $matID
+        }
+
+      # ########### Define Fibers: 3d ###########
+      } elseif { $bendingType == "3d" } {
+        # Flanges
+        set bf1 [expr (1.0/double($numSectors))*($bf/2.0)]
+        for { set i 1 } { $i <= $numSectors } { incr i } {
+          set matID [expr $LehighStartMatTag+($i-1)]
+          set b2i   [expr $b2-$bf1*($i-1)]
+          set b1i   [expr $b2i-$bf1]
+          if { $b1i < 0 } { set b1i 0.0 }
+          patch quad $matID [expr int(ceil(($nf1/$d)*$tf))] [expr int(ceil(($nf2/$bf)*$bf1))]  $d1 -$b2i  $d2 -$b2i  $d2 -$b1i  $d1 -$b1i
+          patch quad $matID [expr int(ceil(($nf1/$d)*$tf))] [expr int(ceil(($nf2/$bf)*$bf1))]  $d1  $b1i  $d2  $b1i  $d2  $b2i  $d1  $b2i
+          patch quad $matID [expr int(ceil(($nf1/$d)*$tf))] [expr int(ceil(($nf2/$bf)*$bf1))] -$d2 -$b2i -$d1 -$b2i -$d1 -$b1i -$d2 -$b1i
+          patch quad $matID [expr int(ceil(($nf1/$d)*$tf))] [expr int(ceil(($nf2/$bf)*$bf1))] -$d2  $b1i -$d1  $b1i -$d1  $b2i -$d2  $b2i
+        }
+        # Web
+        set matID [expr $LehighStartMatTag+$numSectors]
+        patch quad $matID [expr int(ceil(($nf1/$d)*$dw))] [expr int(ceil(($nf2/$bf)*$tw))] -$d1 -$b1 $d1 -$b1 $d1 $b1 -$d1 $b1
+        # Fillets
+        if { $k > $tf } {
+          set r [expr $k-$tf]
+          set pi  [expr 2*asin(1.0)]
+          set Afillet [expr (1-0.25*$pi)*$r*$r]
+          set Yfillet [expr 2/(12-3*$pi)*$r]
+          fiber [expr  $d1-($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matID
+          fiber [expr -$d1+($r-$Yfillet)] [expr  $b1+($r-$Yfillet)] $Afillet $matID
+          fiber [expr  $d1-($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matID
+          fiber [expr -$d1+($r-$Yfillet)] [expr -$b1-($r-$Yfillet)] $Afillet $matID
+        }
+
+      } else {
+        error "Error - wfSection: unknown bendingAxis"
+      }
+    } else {
+      error "ERROR: residualStressType not recgonized: $residualStressType"
+    }
+  }
 
   # ########### Add elastic stiffness if necessary ###########
   if { $AddedElastic == "yes" } {
