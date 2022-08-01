@@ -19,6 +19,7 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
   #    - "-matTag $tag" = utilizes the unaixial materal defined with $tag
   #    - "-Elastic $matTag $Es" = utilizes an elastic material
   #    - "-ElasticPP $startMatTag $Es $Fy" = utilizes an elastically perfectly plastic (ElasticPP) material with residual stress pattern defined later
+  #    - "-Steel01 $startMatTag $Es $Fy $b" = utilizes a Steel01 material with residual stress pattern defined later (using InitStressMaterial)
   #    - "-Steel02 $startMatTag $Es $Fy $b" = utilizes an Steel02 material with residual stress pattern defined later
   #    - "-Hardening $startMatTag $Es $Fy $b" = utilizes multiSurfaceKinematicHardening material with residual stress pattern defined later
   #    - "-ShenSteel $startMatTag $Es $Fy $Fu $eu $units" = utilizes an ShenSteel01 material with residual stress pattern defined later
@@ -106,6 +107,14 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
       set materialType   Hardening
       set currentMatTag  [lindex $args [expr $i+1]]
       set materialParams [lrange $args [expr $i+2] [expr $i+4]]
+      set Es             [lindex $args [expr $i+2]]
+      incr i 4
+      continue
+    }
+    if { $param == "-Steel01" } {
+      set materialType Steel01
+      set currentMatTag  [lindex $args [expr $i+1]]
+      set materialParams [lrange $args [expr $i+1] [expr $i+4]]
       set Es             [lindex $args [expr $i+2]]
       incr i 4
       continue
@@ -212,6 +221,21 @@ proc OpenSeesComposite::wfSection { secID nf1 nf2 d tw bf tf args} {
   if { $materialType == "Elastic" } {
     set materialType matTag
     uniaxialMaterial Elastic $currentMatTag $materialParams
+  }
+
+  if { $materialType == "Steel01" } {
+    set Es [expr double([lindex $materialParams 1])]
+    set Fy [expr double([lindex $materialParams 2])]
+    set b  [expr double([lindex $materialParams 3])]
+    uniaxialMaterial Steel01 $currentMatTag $Fy $Es $b
+
+    if { $residualStressType == "null" } {
+      # If no residual stress, don't create a do-nothing InitStressMaterial
+      # wrapper, instead use the base material we just created
+      set materialType matTag
+    } else {
+      incr currentMatTag
+    }
   }
 
   if { $materialType == "shenSteelDegrade" } {
@@ -444,6 +468,10 @@ proc OpenSeesComposite::defineUniaxialMaterialWithResidualStress {matID fr mater
       set Fy [expr double([lindex $args 1])]
       set b  [expr double([lindex $args 2])]
       uniaxialMaterial multiSurfaceKinematicHardening $matID -initialStress $fr -Direct $Es 0.0 $Fy [expr $b*$Es]
+    }
+    Steel01 {
+      set baseMatID [lindex $args 0]
+      uniaxialMaterial InitStressMaterial $matID $baseMatID $fr
     }
     Steel02 {
       set Es [expr double([lindex $args 0])]
